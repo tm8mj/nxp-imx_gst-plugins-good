@@ -2027,6 +2027,13 @@ gst_pulsesink_get_time (GstClock * clock, GstAudioBaseSink * sink)
   }
 
   pa_threaded_mainloop_lock (mainloop);
+
+  /* Need to check if pa stream is valid as it may be released by caps change*/
+  if (!pbuf->stream) {
+    pa_threaded_mainloop_unlock (mainloop);
+    return GST_CLOCK_TIME_NONE;
+  }
+
   if (gst_pulsering_is_dead (psink, pbuf, TRUE))
     goto server_dead;
 
