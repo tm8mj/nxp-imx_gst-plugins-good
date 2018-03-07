@@ -532,6 +532,10 @@ gst_v4l2_object_new (GstElement * element,
     v4l2object->munmap = munmap;
   }
 
+  v4l2object->poll = gst_poll_new (TRUE);
+  v4l2object->can_wait_event = FALSE;
+  v4l2object->can_poll_device = TRUE;
+
   return v4l2object;
 }
 
@@ -902,6 +906,14 @@ gst_v4l2_object_open_shared (GstV4l2Object * v4l2object, GstV4l2Object * other)
   gboolean ret;
 
   ret = gst_v4l2_dup (v4l2object, other);
+
+  if (ret && !V4L2_TYPE_IS_OUTPUT (v4l2object->type)) {
+    gst_poll_fd_init (&v4l2object->pollfd);
+    v4l2object->pollfd.fd = v4l2object->video_fd;
+    gst_poll_add_fd (v4l2object->poll, &v4l2object->pollfd);
+    /* used for dequeue event */
+    gst_poll_fd_ctl_read (v4l2object->poll, &v4l2object->pollfd, TRUE);
+  }
 
   return ret;
 }
@@ -3869,6 +3881,99 @@ gst_v4l2_object_try_format (GstV4l2Object * v4l2object, GstCaps * caps,
   return gst_v4l2_object_set_format_full (v4l2object, caps, TRUE, error);
 }
 
+GstFlowReturn
+gst_v4l2_object_poll (GstV4l2Object * v4l2object)
+{
+  gint ret;
+
+  if (!v4l2object->can_poll_device)
+    goto done;
+
+  GST_LOG_OBJECT (v4l2object, "polling device");
+
+again:
+  ret = gst_poll_wait (v4l2object->poll, GST_CLOCK_TIME_NONE);
+  if (G_UNLIKELY (ret < 0)) {
+    switch (errno) {
+      case EBUSY:
+        goto stopped;
+      case EAGAIN:
+      case EINTR:
+        goto again;
+      case ENXIO:
+        GST_WARNING_OBJECT (v4l2object,
+            "v4l2 device doesn't support polling. Disabling"
+            " using libv4l2 in this case may cause deadlocks");
+        v4l2object->can_poll_device = FALSE;
+        goto done;
+      default:
+        goto select_error;
+    }
+  }
+
+  if (gst_poll_fd_has_error (v4l2object->poll, &v4l2object->pollfd))
+    goto select_error;
+
+done:
+  return GST_FLOW_OK;
+
+  /* ERRORS */
+stopped:
+  {
+    GST_DEBUG_OBJECT (v4l2object, "stop called");
+    return GST_FLOW_FLUSHING;
+  }
+select_error:
+  {
+    GST_ELEMENT_ERROR (v4l2object->element, RESOURCE, READ, (NULL),
+        ("poll error %d: %s (%d)", ret, g_strerror (errno), errno));
+    return GST_FLOW_ERROR;
+  }
+}
+
+GstFlowReturn
+gst_v4l2_object_dqevent (GstV4l2Object * v4l2object)
+{
+  GstFlowReturn res;
+  struct v4l2_event evt;
+
+  GST_ERROR_OBJECT (v4l2object, "dequeueing a event");
+  if ((res = gst_v4l2_object_poll (v4l2object)) != GST_FLOW_OK)
+    goto poll_failed;
+
+  GST_ERROR_OBJECT (v4l2object, "1equeueing a event");
+
+  memset (&evt, 0x00, sizeof (struct v4l2_event));
+  if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_DQEVENT, &evt) < 0)
+    goto dqevent_failed;
+
+  GST_ERROR_OBJECT (v4l2object, "2equeueing a event: %d", evt.type);
+  switch (evt.type)
+  {
+    case V4L2_EVENT_SOURCE_CHANGE:
+      return GST_V4L2_FLOW_SOURCE_CHANGE;
+      break;
+    case V4L2_EVENT_EOS:
+      return GST_V4L2_FLOW_LAST_BUFFER;
+      break;
+    default:
+      break;
+  }
+
+  return GST_FLOW_OK;
+
+  /* ERRORS */
+poll_failed:
+  {
+    GST_DEBUG_OBJECT (v4l2object, "poll error %s", gst_flow_get_name (res));
+    return res;
+  }
+dqevent_failed:
+  {
+    return GST_FLOW_ERROR;
+  }
+}
+
 /**
  * gst_v4l2_object_acquire_format:
  * @v4l2object the object
@@ -4116,6 +4221,8 @@ gst_v4l2_object_unlock (GstV4l2Object * v4l2object)
 
   GST_LOG_OBJECT (v4l2object->dbg_obj, "start flushing");
 
+  gst_poll_set_flushing (v4l2object->poll, TRUE);
+
   if (v4l2object->pool && gst_buffer_pool_is_active (v4l2object->pool))
     gst_buffer_pool_set_flushing (v4l2object->pool, TRUE);
 
@@ -4131,6 +4238,8 @@ gst_v4l2_object_unlock_stop (GstV4l2Object * v4l2object)
 
   if (v4l2object->pool && gst_buffer_pool_is_active (v4l2object->pool))
     gst_buffer_pool_set_flushing (v4l2object->pool, FALSE);
+
+  gst_poll_set_flushing (v4l2object->poll, FALSE);
 
   return ret;
 }
@@ -4151,6 +4260,8 @@ gst_v4l2_object_stop (GstV4l2Object * v4l2object)
     gst_object_unref (v4l2object->pool);
     v4l2object->pool = NULL;
   }
+
+  gst_poll_free (v4l2object->poll);
 
   GST_V4L2_SET_INACTIVE (v4l2object);
 
