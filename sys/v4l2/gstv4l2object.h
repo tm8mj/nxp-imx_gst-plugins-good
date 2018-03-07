@@ -121,6 +121,9 @@ struct _GstV4l2Object {
   /* the video-device's file descriptor */
   gint video_fd;
   GstV4l2IOMode mode;
+  GstPoll *poll;             /* a poll for video_fd */
+  GstPollFD pollfd;
+  gboolean can_poll_device;
 
   gboolean active;
   gboolean streaming;
@@ -207,6 +210,8 @@ struct _GstV4l2Object {
    * on slow USB firmwares. When this is set, gst_v4l2_set_format() will modify
    * the caps to reflect what was negotiated during fixation */
   gboolean skip_try_fmt_probes;
+  gboolean can_wait_event;
+  gboolean need_wait_event;
 };
 
 struct _GstV4l2ObjectClassHelper {
@@ -287,6 +292,7 @@ gboolean     gst_v4l2_object_stop        (GstV4l2Object * v4l2object);
 GstCaps *    gst_v4l2_object_probe_caps  (GstV4l2Object * v4l2object, GstCaps * filter);
 GstCaps *    gst_v4l2_object_get_caps    (GstV4l2Object * v4l2object, GstCaps * filter);
 
+GstFlowReturn gst_v4l2_object_dqevent     (GstV4l2Object * v4l2object);
 gboolean     gst_v4l2_object_acquire_format (GstV4l2Object * v4l2object, GstVideoInfo * info);
 
 gboolean     gst_v4l2_object_set_crop    (GstV4l2Object * obj);

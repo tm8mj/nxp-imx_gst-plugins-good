@@ -509,6 +509,42 @@ gst_v4l2_adjust_buf_type (GstV4l2Object * v4l2object)
   }
 }
 
+gboolean
+gst_v4l2_subscribe_event (GstV4l2Object * v4l2object)
+{
+  GstElement *e;
+  struct v4l2_event_subscription  sub;
+
+  e = v4l2object->element;
+
+  GST_DEBUG_OBJECT (e, "subscribe event");
+
+  if (!GST_V4L2_IS_OPEN (v4l2object))
+    return FALSE;
+
+  memset(&sub, 0, sizeof(struct v4l2_event_subscription));
+  sub.type = V4L2_EVENT_SOURCE_CHANGE;
+  if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_SUBSCRIBE_EVENT, &sub) < 0)
+    goto failed;
+
+  sub.type = V4L2_EVENT_EOS;
+  if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_SUBSCRIBE_EVENT, &sub) < 0)
+    goto failed;
+
+  v4l2object->can_wait_event = TRUE;
+
+  return TRUE;
+
+  /* ERRORS */
+failed:
+  {
+    GST_WARNING_OBJECT (e, "Cannot subscribe V4L2_EVENT_SOURCE_CHANGE or "
+        "V4L2_EVENT_EOS event for device '%s'.",
+        v4l2object->videodev);
+    return TRUE;
+  }
+}
+
 /******************************************************
  * gst_v4l2_open():
  *   open the video device (v4l2object->videodev)
@@ -597,6 +633,10 @@ gst_v4l2_open (GstV4l2Object * v4l2object)
 
   if (v4l2object->extra_controls)
     gst_v4l2_set_controls (v4l2object, v4l2object->extra_controls);
+
+  if (GST_IS_V4L2_VIDEO_DEC (v4l2object->element)) {
+    gst_v4l2_subscribe_event (v4l2object);
+  }
 
   /* UVC devices are never interlaced, and doing VIDIOC_TRY_FMT on them
    * causes expensive and slow USB IO, so don't probe them for interlaced
@@ -695,6 +735,7 @@ gst_v4l2_dup (GstV4l2Object * v4l2object, GstV4l2Object * other)
       v4l2object->vcap.card, v4l2object->videodev);
 
   v4l2object->never_interlaced = other->never_interlaced;
+  v4l2object->can_wait_event = other->can_wait_event;
 
   return TRUE;
 
