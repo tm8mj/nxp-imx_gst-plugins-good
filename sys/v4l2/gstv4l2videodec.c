@@ -28,9 +28,12 @@
 #include <errno.h>
 #include <unistd.h>
 #include <string.h>
+#include <libdrm/drm_fourcc.h>
+#include <gst/allocators/gstdmabufmeta.h>
 
 #include "gstv4l2object.h"
 #include "gstv4l2videodec.h"
+#include "gstimxcommon.h"
 
 #include <string.h>
 #include <gst/gst-i18n-plugin.h>
@@ -632,6 +635,11 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
 
   if (frame) {
     frame->output_buffer = buffer;
+    if (IS_AMPHION()) {
+      guint64 drm_modifier = DRM_FORMAT_MOD_AMPHION_TILED;
+      gst_buffer_add_dmabuf_meta(frame->output_buffer, drm_modifier);
+      GST_DEBUG_OBJECT(decoder, "add drm modifier: %lld\n", drm_modifier);
+    }
     buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
