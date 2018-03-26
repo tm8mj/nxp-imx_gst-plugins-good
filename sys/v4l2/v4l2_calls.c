@@ -604,6 +604,10 @@ gst_v4l2_open (GstV4l2Object * v4l2object, GstV4l2Error * error)
     v4l2object->never_interlaced = TRUE;
   }
 
+  if (!strcmp ((char *) v4l2object->vcap.driver, "vpu B0")) {
+    v4l2object->is_amphion = TRUE;
+  }
+
   return TRUE;
 
   /* ERRORS */
@@ -691,6 +695,7 @@ gst_v4l2_dup (GstV4l2Object * v4l2object, GstV4l2Object * other)
 
   v4l2object->never_interlaced = other->never_interlaced;
   v4l2object->no_initial_format = other->no_initial_format;
+  v4l2object->is_amphion = other->is_amphion;
 
   return TRUE;
 
