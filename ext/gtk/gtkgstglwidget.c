@@ -278,7 +278,7 @@ gtk_gst_gl_widget_render (GtkGLArea * widget, GdkGLContext * context)
       base_widget->buffer, context);
 
   _redraw_texture (GTK_GST_GL_WIDGET (widget), priv->current_tex);
-  gst_gl_overlay_compositor_draw_overlays (priv->overlay_compositor);
+  gst_gl_overlay_compositor_draw_overlays (priv->overlay_compositor, NULL);
 
   gst_gl_insert_debug_marker (priv->other_context, "texture %u redrawn",
       priv->current_tex);
