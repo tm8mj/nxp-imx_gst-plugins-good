@@ -312,6 +312,11 @@ gst_v4l2_video_dec_set_format (GstVideoDecoder * decoder,
   if (!dyn_resolution)
     ret = gst_v4l2_object_set_format (self->v4l2output, state->caps, &error);
 
+  if (GST_V4L2_IS_ACTIVE (self->v4l2output)) {
+    self->input_state = gst_video_codec_state_ref (state);
+    return TRUE;
+  }
+
   if (ret)
     self->input_state = gst_video_codec_state_ref (state);
   else
