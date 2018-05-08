@@ -550,6 +550,8 @@ gst_v4l2_object_destroy (GstV4l2Object * v4l2object)
 {
   g_return_if_fail (v4l2object != NULL);
 
+  gst_poll_free (v4l2object->poll);
+
   g_free (v4l2object->videodev);
 
   g_free (v4l2object->channel);
@@ -4172,8 +4174,6 @@ gst_v4l2_object_stop (GstV4l2Object * v4l2object)
     gst_object_unref (v4l2object->pool);
     v4l2object->pool = NULL;
   }
-
-  gst_poll_free (v4l2object->poll);
 
   GST_V4L2_SET_INACTIVE (v4l2object);
 
