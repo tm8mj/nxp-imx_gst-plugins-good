@@ -300,7 +300,6 @@ gst_v4l2_video_dec_set_format (GstVideoDecoder * decoder,
         GstQuery *query = gst_query_new_allocation (caps, FALSE);
         gst_pad_peer_query (decoder->srcpad, query);
         gst_query_unref (query);
-        gst_caps_unref (caps);
       }
     }
 
