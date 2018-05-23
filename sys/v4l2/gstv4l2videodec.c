@@ -381,6 +381,12 @@ gst_v4l2_video_dec_finish (GstVideoDecoder * decoder)
   if (gst_v4l2_decoder_cmd (self->v4l2output, V4L2_DEC_CMD_STOP, 0)) {
     GstTask *task = decoder->srcpad->task;
 
+    // Workaround as CMD_STOP will wait long time.
+    if (gst_pad_get_task_state (decoder->srcpad) != GST_TASK_STARTED) {
+      GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+      goto done;
+    }
+
     /* If the decoder stop command succeeded, just wait until processing is
      * finished */
     GST_OBJECT_LOCK (task);
