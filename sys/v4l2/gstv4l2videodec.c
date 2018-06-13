@@ -319,6 +319,7 @@ gst_v4l2_video_dec_flush (GstVideoDecoder * decoder)
   /* gst_v4l2_buffer_pool_flush() calls streamon the capture pool and must be
    * called after gst_v4l2_object_unlock_stop() stopped flushing the buffer
    * pool. */
+
   if (self->v4l2capture->pool)
     gst_v4l2_buffer_pool_flush (self->v4l2capture->pool);
 
