@@ -833,7 +833,7 @@ gst_v4l2_get_driver_min_buffers (GstV4l2Object * v4l2object)
   if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_G_CTRL, &control) == 0) {
     GST_DEBUG_OBJECT (v4l2object->dbg_obj,
         "driver requires a minimum of %d buffers", control.value);
-    v4l2object->min_buffers = control.value + 5;
+    v4l2object->min_buffers = control.value;
   } else {
     v4l2object->min_buffers = 0;
   }
