@@ -546,12 +546,14 @@ gst_pulseringbuffer_open_device (GstAudioRingBuffer * buf)
     pa_context_set_subscribe_callback (pctx->context,
         gst_pulsering_context_subscribe_cb, pctx);
 
-    /* try to connect to the server and wait for completion, we don't want to
-     * autospawn a daemon */
+    /* try to connect to the server and wait for completion, we want to
+     * make pulsesink as default audiosink, so here not set NOAUTOSPAWN flag  */
     GST_LOG_OBJECT (psink, "connect to server %s",
         GST_STR_NULL (psink->server));
+    /* if (pa_context_connect (pctx->context, psink->server,
+            PA_CONTEXT_NOAUTOSPAWN, NULL) < 0) */
     if (pa_context_connect (pctx->context, psink->server,
-            PA_CONTEXT_NOAUTOSPAWN, NULL) < 0)
+            PA_CONTEXT_NOFLAGS, NULL) < 0)
       goto connect_failed;
   } else {
     GST_INFO_OBJECT (psink,
@@ -1016,6 +1018,8 @@ gst_pulseringbuffer_acquire (GstAudioRingBuffer * buf,
 
   g_free (psink->device);
   psink->device = g_strdup (pa_stream_get_device_name (pbuf->stream));
+
+  g_print ("\n===!!! Current pulsesink device is %s !!!===\n\n", psink->device);
 
 #ifndef GST_DISABLE_GST_DEBUG
   pa_format_info_snprint (print_buf, sizeof (print_buf),

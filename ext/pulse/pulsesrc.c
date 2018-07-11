@@ -1091,6 +1091,8 @@ gst_pulsesrc_read (GstAudioSrc * asrc, gpointer data, guint length,
     g_object_notify (G_OBJECT (pulsesrc), "volume");
     g_object_notify (G_OBJECT (pulsesrc), "mute");
     g_object_notify (G_OBJECT (pulsesrc), "current-device");
+    g_print ("\n=== !!! Current pulsesrc device is %s !!!===\n",
+      gst_pulsesrc_get_current_device (pulsesrc));
   }
 
   pa_threaded_mainloop_lock (pulsesrc->mainloop);
