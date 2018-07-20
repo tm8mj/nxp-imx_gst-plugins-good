@@ -1150,6 +1150,16 @@ G_STMT_START { \
     SET_META ("H264");
   } else if (gst_structure_has_name (s, "video/x-h265")) {
     SET_META ("H265");
+  } else if (gst_structure_has_name (s, "video/x-pn-realvideo")) {
+    SET_META ("RV");
+  } else if (gst_structure_has_name (s, "video/x-vp6-flash")) {
+    SET_META ("VP6");
+  } else if (gst_structure_has_name (s, "video/x-cavs")) {
+    SET_META ("AVS");
+  } else if (gst_structure_has_name (s, "video/x-flash-video")) {
+    SET_META ("SPK");
+  } else if (gst_structure_has_name (s, "video/x-divx")) {
+    SET_META ("DIVX");
   } else if (gst_structure_has_name (s, "video/x-wmv")) {
     SET_META ("VC1");
   } else if (gst_structure_has_name (s, "video/x-vp8")) {

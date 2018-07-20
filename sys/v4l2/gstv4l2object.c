@@ -174,6 +174,11 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_H264_NO_SC, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_H264_MVC, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_HEVC, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_RV, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_VP6, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_AVS, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_SPK, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_DIVX, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_H263, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_MPEG1, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_MPEG2, FALSE, GST_V4L2_CODEC},
@@ -1457,10 +1462,27 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
           "stream-format", G_TYPE_STRING, "byte-stream", "alignment",
           G_TYPE_STRING, "au", NULL);
       break;
+    case V4L2_PIX_FMT_RV:
+      structure = gst_structure_new_empty ("video/x-pn-realvideo");
+      break;
+    case V4L2_PIX_FMT_VP6:
+      structure = gst_structure_new_empty ("video/x-vp6-flash");
+      break;
+    case V4L2_PIX_FMT_AVS:
+      structure = gst_structure_new_empty ("video/x-cavs");
+      break;
+    case V4L2_PIX_FMT_SPK:
+      structure = gst_structure_new ("video/x-flash-video",
+          "flvversion", G_TYPE_INT, 1, NULL);
+      break;
+    case V4L2_PIX_FMT_DIVX:
+      structure = gst_structure_new ("video/x-divx",
+          "divxversion", G_TYPE_INT, 3, NULL);
+      break;
     case V4L2_PIX_FMT_VC1_ANNEX_G:
     case V4L2_PIX_FMT_VC1_ANNEX_L:
       structure = gst_structure_new ("video/x-wmv",
-          "wmvversion", G_TYPE_INT, 3, "format", G_TYPE_STRING, "WVC1", NULL);
+          "wmvversion", G_TYPE_INT, 3, NULL);
       break;
     case V4L2_PIX_FMT_VP8:
       structure = gst_structure_new_empty ("video/x-vp8");
@@ -1839,6 +1861,24 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
         fourcc = V4L2_PIX_FMT_H264;
     } else if (g_str_equal (mimetype, "video/x-h265")) {
       fourcc = V4L2_PIX_FMT_HEVC;
+    } else if (g_str_equal (mimetype, "video/x-pn-realvideo")) {
+      fourcc = V4L2_PIX_FMT_RV;
+    } else if (g_str_equal (mimetype, "video/x-vp6-flash")) {
+      fourcc = V4L2_PIX_FMT_VP6;
+    } else if (g_str_equal (mimetype, "video/x-cavs")) {
+      fourcc = V4L2_PIX_FMT_AVS;
+    } else if (g_str_equal (mimetype, "video/x-flash-video")) {
+      fourcc = V4L2_PIX_FMT_SPK;
+    } else if (g_str_equal (mimetype, "video/x-divx")) {
+      fourcc = V4L2_PIX_FMT_DIVX;
+    } else if (g_str_equal (mimetype, "video/x-wmv")) {
+      const gchar *format = gst_structure_get_string (structure, "format");
+      if (format) {
+        if (!g_ascii_strcasecmp (format, "WMV3"))
+          fourcc = V4L2_PIX_FMT_VC1_ANNEX_G;
+        else if (!g_ascii_strcasecmp (format, "WVC1"))
+          fourcc = V4L2_PIX_FMT_VC1_ANNEX_L;
+      }
     } else if (g_str_equal (mimetype, "video/x-vp8")) {
       fourcc = V4L2_PIX_FMT_VP8;
     } else if (g_str_equal (mimetype, "video/x-vp9")) {
