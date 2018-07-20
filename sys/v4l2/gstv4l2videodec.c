@@ -1396,6 +1396,8 @@ G_STMT_START { \
     }
   } else if (gst_structure_has_name (s, "video/x-h263")) {
     SET_META ("H263");
+  } else if (gst_structure_has_name (s, "video/x-xvid")) {
+    SET_META ("XVID");
   } else if (gst_structure_has_name (s, "video/x-fwht")) {
     SET_META ("FWHT");
   } else if (gst_structure_has_name (s, "video/x-h264")) {
@@ -1404,6 +1406,23 @@ G_STMT_START { \
   } else if (gst_structure_has_name (s, "video/x-h265")) {
     SET_META ("H265");
     cdata->codec = gst_v4l2_h265_get_codec ();
+  } else if (gst_structure_has_name (s, "video/x-pn-realvideo")) {
+    SET_META ("RV");
+  } else if (gst_structure_has_name (s, "video/x-vp6-flash")) {
+    SET_META ("VP6");
+  } else if (gst_structure_has_name (s, "video/x-cavs")) {
+    SET_META ("AVS");
+  } else if (gst_structure_has_name (s, "video/x-flash-video")) {
+    SET_META ("SPK");
+  } else if (gst_structure_has_name (s, "video/x-divx")) {
+    gint divxversion = 0;
+    gst_structure_get_int (s, "divxversion", &divxversion);
+
+    if (divxversion == 3) {
+      SET_META ("DIV3");
+    } else {
+      SET_META ("DIVX");
+    }
   } else if (gst_structure_has_name (s, "video/x-wmv")) {
     SET_META ("VC1");
   } else if (gst_structure_has_name (s, "video/x-vp8")) {
