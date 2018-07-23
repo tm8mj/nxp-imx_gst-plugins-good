@@ -186,6 +186,10 @@ gst_v4l2_probe_and_register (GstPlugin * plugin)
       if (gst_v4l2_is_vp9_enc (sink_caps, src_caps))
         gst_v4l2_vp9_enc_register (plugin, basename, it->device_path,
             sink_caps, src_caps);
+
+      if (gst_v4l2_is_jpeg_enc (sink_caps, src_caps))
+        gst_v4l2_jpeg_enc_register (plugin, basename, it->device_path,
+            sink_caps, src_caps);
     } else if (gst_v4l2_is_transform (sink_caps, src_caps)) {
       gst_v4l2_transform_register (plugin, basename, it->device_path,
           sink_caps, src_caps);
