@@ -753,11 +753,9 @@ gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
   }
 
   if (frame->input_buffer) {
-    GST_VIDEO_ENCODER_STREAM_UNLOCK (encoder);
     ret =
         gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL
         (self->v4l2output->pool), &frame->input_buffer);
-    GST_VIDEO_ENCODER_STREAM_LOCK (encoder);
 
     if (ret == GST_FLOW_FLUSHING) {
       if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=
