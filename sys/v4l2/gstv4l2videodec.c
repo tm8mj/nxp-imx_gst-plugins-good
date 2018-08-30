@@ -933,27 +933,7 @@ gst_v4l2_video_dec_sink_event (GstVideoDecoder * decoder, GstEvent * event)
   GstV4l2VideoDec *self = GST_V4L2_VIDEO_DEC (decoder);
   gboolean ret;
 
-  switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_FLUSH_START:
-      GST_DEBUG_OBJECT (self, "flush start");
-      gst_v4l2_object_unlock (self->v4l2output);
-      gst_v4l2_object_unlock (self->v4l2capture);
-      break;
-    default:
-      break;
-  }
-
   ret = GST_VIDEO_DECODER_CLASS (parent_class)->sink_event (decoder, event);
-
-  switch (GST_EVENT_TYPE (event)) {
-    case GST_EVENT_FLUSH_START:
-      /* The processing thread should stop now, wait for it */
-      gst_pad_stop_task (decoder->srcpad);
-      GST_DEBUG_OBJECT (self, "flush start done");
-      break;
-    default:
-      break;
-  }
 
   return ret;
 }
