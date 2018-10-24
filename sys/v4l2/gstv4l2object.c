@@ -2077,7 +2077,7 @@ gst_v4l2_object_get_interlace_mode (enum v4l2_field field,
 {
   switch (field) {
     case V4L2_FIELD_ANY:
-      GST_ERROR
+      GST_WARNING
           ("Driver bug detected - check driver with v4l2-compliance from http://git.linuxtv.org/v4l-utils.git\n");
       return FALSE;
     case V4L2_FIELD_NONE:
