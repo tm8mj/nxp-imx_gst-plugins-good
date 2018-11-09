@@ -769,9 +769,10 @@ gst_v4l2_video_enc_handle_frame (GstVideoEncoder * encoder,
     }
   }
 
-  gst_video_codec_frame_unref (frame);
   gst_buffer_unref (frame->input_buffer);
   frame->input_buffer = NULL;
+  gst_video_codec_frame_unref (frame);
+
   return ret;
 
   /* ERRORS */
