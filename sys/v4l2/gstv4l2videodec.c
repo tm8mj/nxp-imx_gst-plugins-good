@@ -675,7 +675,8 @@ gst_v4l2_video_dec_drain (GstVideoDecoder * decoder)
 
   GST_DEBUG_OBJECT (self, "Draining...");
   gst_v4l2_video_dec_finish (decoder);
-  gst_v4l2_video_dec_flush (decoder);
+  if (!gst_v4l2_video_dec_flush (decoder))
+    return GST_FLOW_ERROR;
 
   return GST_FLOW_OK;
 }
