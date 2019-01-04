@@ -2622,7 +2622,7 @@ gst_pulsesink_get_sink_input_info (GstPulseSink * psink, gdouble * volume,
 
   while (pa_operation_get_state (o) == PA_OPERATION_RUNNING) {
     pa_threaded_mainloop_wait (mainloop);
-    if (gst_pulsering_is_dead (psink, pbuf, TRUE))
+    if (gst_pulsering_is_dead (psink, pbuf, FALSE))
       goto unlock;
   }
 
