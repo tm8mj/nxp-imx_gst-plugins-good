@@ -245,33 +245,6 @@ gst_v4l2_video_dec_set_format (GstVideoDecoder * decoder,
     }
     gst_video_codec_state_unref (self->input_state);
     self->input_state = NULL;
-
-    gst_v4l2_video_dec_finish (decoder);
-    gst_v4l2_object_stop (self->v4l2output);
-
-    /* The renegotiation flow don't blend with the base class flow. To
-     * properly stop the capture pool we need to reclaim our buffers, which
-     * will happend through the allocation query. The allocation query is
-     * triggered by gst_video_decoder_negotiate() which requires the output
-     * caps to be set, but we can't know this information as we rely on the
-     * decoder, which requires the capture queue to be stopped.
-     *
-     * To workaround this issue, we simply run an allocation query with the
-     * old negotiated caps in order to drain/reclaim our buffers. That breaks
-     * the complexity and should not have much impact in performance since the
-     * following allocation query will happen on a drained pipeline and won't
-     * block. */
-    {
-      GstCaps *caps = gst_pad_get_current_caps (decoder->srcpad);
-      if (caps) {
-        GstQuery *query = gst_query_new_allocation (caps, FALSE);
-        gst_pad_peer_query (decoder->srcpad, query);
-        gst_query_unref (query);
-      }
-    }
-
-    gst_v4l2_object_stop (self->v4l2capture);
-    self->output_flow = GST_FLOW_OK;
   }
 
   if (GST_V4L2_IS_ACTIVE(self->v4l2output)) {
@@ -631,15 +604,17 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     ret = gst_buffer_pool_acquire_buffer (pool, &buffer, NULL);
     g_object_unref (pool);
 
+    if (ret == GST_V4L2_FLOW_SOURCE_CHANGE) {
+      GST_DEBUG_OBJECT (decoder, "Received resolution change");
+      gst_v4l2_object_stop (self->v4l2capture);
+      return;
+    }
+
     if (ret != GST_FLOW_OK)
       goto beach;
 
     GST_LOG_OBJECT (decoder, "Process output buffer");
     ret = gst_v4l2_buffer_pool_process (v4l2_pool, &buffer);
-    if (ret == GST_V4L2_FLOW_SOURCE_CHANGE) {
-      gst_v4l2_object_stop (self->v4l2capture);
-      return;
-    }
   } while (ret == GST_V4L2_FLOW_CORRUPTED_BUFFER);
 
   if (ret != GST_FLOW_OK)
@@ -652,7 +627,7 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     if (IS_AMPHION()) {
       guint64 drm_modifier = DRM_FORMAT_MOD_AMPHION_TILED;
       gst_buffer_add_dmabuf_meta(frame->output_buffer, drm_modifier);
-      GST_DEBUG_OBJECT(decoder, "add drm modifier: %lld\n", drm_modifier);
+      GST_DEBUG_OBJECT(decoder, "Add drm modifier: %lld\n", drm_modifier);
     }
     buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
