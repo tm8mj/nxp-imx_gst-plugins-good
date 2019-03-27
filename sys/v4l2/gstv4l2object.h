@@ -213,6 +213,7 @@ struct _GstV4l2Object {
   gboolean skip_try_fmt_probes;
   gboolean can_wait_event;
   gboolean need_wait_event;
+  gboolean is_amphion;
 };
 
 struct _GstV4l2ObjectClassHelper {

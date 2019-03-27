@@ -624,7 +624,7 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
 
   if (frame) {
     frame->output_buffer = buffer;
-    if (IS_AMPHION()) {
+    if (IS_AMPHION() && self->v4l2capture->is_amphion) {
       guint64 drm_modifier = DRM_FORMAT_MOD_AMPHION_TILED;
       gst_buffer_add_dmabuf_meta(frame->output_buffer, drm_modifier);
       GST_DEBUG_OBJECT(decoder, "Add drm modifier: %lld\n", drm_modifier);
