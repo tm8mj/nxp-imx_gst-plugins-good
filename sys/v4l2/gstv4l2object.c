@@ -94,6 +94,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_ABGR32, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_XBGR32, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_ARGB32, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_RGBA, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_XRGB32, TRUE, GST_V4L2_RAW},
 
   /* Deprecated Packed RGB Image Formats (alpha ambiguity) */
@@ -1056,6 +1057,7 @@ gst_v4l2_object_format_get_rank (const struct v4l2_fmtdesc *fmt)
     case V4L2_PIX_FMT_ABGR32:
     case V4L2_PIX_FMT_XBGR32:
     case V4L2_PIX_FMT_ARGB32:
+    case V4L2_PIX_FMT_RGBA:
     case V4L2_PIX_FMT_XRGB32:
       rank = RGB_BASE_RANK;
       break;
@@ -1327,6 +1329,9 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
     case V4L2_PIX_FMT_ABGR32:
       format = GST_VIDEO_FORMAT_BGRA;
       break;
+    case V4L2_PIX_FMT_RGBA:
+      format = GST_VIDEO_FORMAT_RGBA;
+      break;
     case V4L2_PIX_FMT_ARGB32:
       format = GST_VIDEO_FORMAT_ARGB;
       break;
@@ -1410,6 +1415,7 @@ gst_v4l2_object_v4l2fourcc_is_rgb (guint32 fourcc)
     case V4L2_PIX_FMT_BGR32:
     case V4L2_PIX_FMT_ABGR32:
     case V4L2_PIX_FMT_ARGB32:
+    case V4L2_PIX_FMT_RGBA:
       ret = TRUE;
       break;
     default:
@@ -1504,6 +1510,7 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
     case V4L2_PIX_FMT_RGB32:
     case V4L2_PIX_FMT_XRGB32:
     case V4L2_PIX_FMT_ARGB32:
+    case V4L2_PIX_FMT_RGBA:
     case V4L2_PIX_FMT_BGR32:
     case V4L2_PIX_FMT_XBGR32:
     case V4L2_PIX_FMT_ABGR32:
@@ -1813,6 +1820,9 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
       case GST_VIDEO_FORMAT_BGRA:
         fourcc = V4L2_PIX_FMT_BGR32;
         fourcc_nc = V4L2_PIX_FMT_ABGR32;
+        break;
+      case GST_VIDEO_FORMAT_RGBA:
+        fourcc = V4L2_PIX_FMT_RGBA;
         break;
       case GST_VIDEO_FORMAT_GRAY8:
         fourcc = V4L2_PIX_FMT_GREY;
