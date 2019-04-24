@@ -1091,6 +1091,8 @@ gst_v4l2_buffer_pool_qbuf (GstV4l2BufferPool * pool, GstBuffer * buf)
   if (GST_BUFFER_TIMESTAMP_IS_VALID (buf)) {
     timestamp = GST_BUFFER_TIMESTAMP (buf);
     GST_TIME_TO_TIMEVAL (timestamp, group->buffer.timestamp);
+  } else {
+    group->buffer.timestamp.tv_sec = -1;
   }
 
   GST_OBJECT_LOCK (pool);
