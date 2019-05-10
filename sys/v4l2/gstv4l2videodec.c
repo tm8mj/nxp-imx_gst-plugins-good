@@ -624,6 +624,9 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
 
   if (frame) {
     frame->output_buffer = buffer;
+    frame->pts = GST_BUFFER_TIMESTAMP (buffer);
+    GST_DEBUG_OBJECT (decoder, "output frame time stamp: %" \
+        GST_TIME_FORMAT, GST_TIME_ARGS (frame->pts));
     if (IS_AMPHION() && self->v4l2capture->is_amphion) {
       guint64 drm_modifier = DRM_FORMAT_MOD_AMPHION_TILED;
       gst_buffer_add_dmabuf_meta(frame->output_buffer, drm_modifier);
