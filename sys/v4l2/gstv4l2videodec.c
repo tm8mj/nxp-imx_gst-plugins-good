@@ -496,7 +496,6 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     GstVideoInfo info;
     GstVideoCodecState *output_state;
     GstCaps *acquired_caps, *available_caps, *caps, *filter;
-    GstStructure *st;
 
     /* Wait until received SOURCE_CHANGE event to get right video format */
     while (self->v4l2capture->can_wait_event
@@ -522,11 +521,9 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     if (!gst_v4l2_object_acquire_format (self->v4l2capture, &info))
       goto not_negotiated;
 
-    /* Create caps from the acquired format, remove the format field */
+    /* Create caps from the acquired format */
     acquired_caps = gst_video_info_to_caps (&info);
     GST_DEBUG_OBJECT (self, "Acquired caps: %" GST_PTR_FORMAT, acquired_caps);
-    st = gst_caps_get_structure (acquired_caps, 0);
-    gst_structure_remove_field (st, "format");
 
     /* Probe currently available pixel formats */
     available_caps = gst_v4l2_object_probe_caps (self->v4l2capture, NULL);
