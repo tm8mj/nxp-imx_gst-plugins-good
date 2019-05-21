@@ -533,6 +533,11 @@ gst_v4l2_subscribe_event (GstV4l2Object * v4l2object)
 
   v4l2object->can_wait_event = TRUE;
 
+  sub.type = V4L2_EVENT_DECODE_ERROR;
+  if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_SUBSCRIBE_EVENT, &sub) < 0)
+    GST_DEBUG_OBJECT (e, "Cannot subscribe V4L2_EVENT_ERROR event.");
+
+
   return TRUE;
 
   /* ERRORS */

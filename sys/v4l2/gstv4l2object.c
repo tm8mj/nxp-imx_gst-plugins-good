@@ -4027,10 +4027,10 @@ gst_v4l2_object_dqevent (GstV4l2Object * v4l2object)
   {
     case V4L2_EVENT_SOURCE_CHANGE:
       return GST_V4L2_FLOW_SOURCE_CHANGE;
-      break;
     case V4L2_EVENT_EOS:
       return GST_V4L2_FLOW_LAST_BUFFER;
-      break;
+    case V4L2_EVENT_DECODE_ERROR:
+      return GST_FLOW_ERROR;
     default:
       break;
   }
