@@ -632,7 +632,7 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     buffer = NULL;
     ret = gst_video_decoder_finish_frame (decoder, frame);
 
-    if (ret != GST_FLOW_OK)
+    if (!(ret == GST_FLOW_OK || ret == GST_FLOW_NOT_LINKED))
       goto beach;
   } else {
     GST_WARNING_OBJECT (decoder, "Decoder is producing too many buffers");
