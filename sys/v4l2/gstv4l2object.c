@@ -5184,6 +5184,13 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
 
   can_share_own_pool = (has_video_meta || !obj->need_video_meta);
 
+  /* aovid copy Amphion tiled frame buffer for un-active video track */
+  if (obj->is_amphion) {
+    can_share_own_pool = TRUE;
+    if (min < GST_V4L2_MIN_BUFFERS (obj))
+      min = GST_V4L2_MIN_BUFFERS (obj);
+  }
+
   gst_v4l2_get_driver_min_buffers (obj);
   /* We can't share our own pool, if it exceed V4L2 capacity */
   if (min + obj->min_buffers + 1 > VIDEO_MAX_FRAME)
