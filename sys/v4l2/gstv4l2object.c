@@ -179,7 +179,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_VP6, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_AVS, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_SPK, FALSE, GST_V4L2_CODEC},
-  {V4L2_PIX_FMT_DIVX, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_DIV3, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_H263, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_MPEG1, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_MPEG2, FALSE, GST_V4L2_CODEC},
@@ -1487,7 +1487,7 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
       structure = gst_structure_new ("video/x-flash-video",
           "flvversion", G_TYPE_INT, 1, NULL);
       break;
-    case V4L2_PIX_FMT_DIVX:
+    case V4L2_PIX_FMT_DIV3:
       structure = gst_structure_new ("video/x-divx",
           "divxversion", G_TYPE_INT, 3, NULL);
       break;
@@ -1890,7 +1890,7 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
     } else if (g_str_equal (mimetype, "video/x-flash-video")) {
       fourcc = V4L2_PIX_FMT_SPK;
     } else if (g_str_equal (mimetype, "video/x-divx")) {
-      fourcc = V4L2_PIX_FMT_DIVX;
+      fourcc = V4L2_PIX_FMT_DIV3;
     } else if (g_str_equal (mimetype, "video/x-wmv")) {
       const gchar *format = gst_structure_get_string (structure, "format");
       if (format) {
