@@ -1122,7 +1122,14 @@ G_STMT_START { \
   } else if (gst_structure_has_name (s, "video/x-flash-video")) {
     SET_META ("SPK");
   } else if (gst_structure_has_name (s, "video/x-divx")) {
-    SET_META ("DIVX");
+    gint divxversion = 0;
+    gst_structure_get_int (s, "divxversion", &divxversion);
+
+    if (divxversion == 3) {
+      SET_META ("DIV3");
+    } else {
+      SET_META ("DIVX");
+    }
   } else if (gst_structure_has_name (s, "video/x-wmv")) {
     SET_META ("VC1");
   } else if (gst_structure_has_name (s, "video/x-vp8")) {
