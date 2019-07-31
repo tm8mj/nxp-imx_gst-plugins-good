@@ -1451,10 +1451,12 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
           "mpegversion", G_TYPE_INT, 2, NULL);
       break;
     case V4L2_PIX_FMT_MPEG4:
-    case V4L2_PIX_FMT_XVID:
       structure = gst_structure_new ("video/mpeg",
           "mpegversion", G_TYPE_INT, 4, "systemstream",
           G_TYPE_BOOLEAN, FALSE, NULL);
+      break;
+    case V4L2_PIX_FMT_XVID:
+      structure = gst_structure_new_empty ("video/x-xvid");
       break;
     case V4L2_PIX_FMT_H263:
       structure = gst_structure_new ("video/x-h263",
@@ -1875,6 +1877,8 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
             break;
         }
       }
+    } else if (g_str_equal (mimetype, "video/x-xvid")) {
+      fourcc = V4L2_PIX_FMT_XVID;
     } else if (g_str_equal (mimetype, "video/x-h263")) {
       fourcc = V4L2_PIX_FMT_H263;
     } else if (g_str_equal (mimetype, "video/x-h264")) {
