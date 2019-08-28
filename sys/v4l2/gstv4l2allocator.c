@@ -806,7 +806,7 @@ gst_v4l2_allocator_alloc_mmap (GstV4l2Allocator * allocator)
           "mmap buffer length %d, data offset %d, plane %d",
           group->planes[i].length, group->planes[i].data_offset, i);
 
-      group->mem[i] = (GstMemory *) _v4l2mem_new (GST_MEMORY_FLAG_PHYSICALLY_CONTIGUOUS, GST_ALLOCATOR (allocator),
+      group->mem[i] = (GstMemory *) _v4l2mem_new (0, GST_ALLOCATOR (allocator),
           NULL, group->planes[i].length, 0, 0, group->planes[i].length, i, data,
           -1, group);
     } else {
@@ -868,7 +868,7 @@ gst_v4l2_allocator_alloc_dmabuf (GstV4l2Allocator * allocator,
       GST_LOG_OBJECT (allocator, "exported DMABUF as fd %i plane %d",
           expbuf.fd, i);
 
-      group->mem[i] = (GstMemory *) _v4l2mem_new (GST_MEMORY_FLAG_PHYSICALLY_CONTIGUOUS, GST_ALLOCATOR (allocator),
+      group->mem[i] = (GstMemory *) _v4l2mem_new (0, GST_ALLOCATOR (allocator),
           NULL, group->planes[i].length, 0, group->planes[i].data_offset,
           group->planes[i].length - group->planes[i].data_offset, i, NULL,
           expbuf.fd, group);
