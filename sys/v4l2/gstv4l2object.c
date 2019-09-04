@@ -3241,6 +3241,9 @@ gst_v4l2_object_is_dmabuf_supported (GstV4l2Object * v4l2object)
   if (errno == ENOTTY)
     ret = FALSE;
 
+  if (v4l2object->dont_use_dmabuf)
+    ret = FALSE;
+
   return ret;
 }
 

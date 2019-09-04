@@ -218,6 +218,7 @@ struct _GstV4l2Object {
   /* Quirks */
   /* Skips interlacing probes */
   gboolean never_interlaced;
+  gboolean dont_use_dmabuf;
   /* Allow to skip reading initial format through G_FMT. Some devices
    * just fails if you don't call S_FMT first. (ex: M2M decoders) */
   gboolean no_initial_format;
