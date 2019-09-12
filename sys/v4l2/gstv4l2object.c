@@ -4028,6 +4028,15 @@ select_error:
   }
 }
 
+gboolean
+gst_v4l2_object_streamoff (GstV4l2Object * v4l2object)
+{
+  if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_STREAMOFF, &v4l2object->type) < 0)
+    return FALSE;
+
+  return TRUE;
+}
+
 GstFlowReturn
 gst_v4l2_object_dqevent (GstV4l2Object * v4l2object)
 {

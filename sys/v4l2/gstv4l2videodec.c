@@ -296,10 +296,14 @@ gst_v4l2_video_dec_flush (GstVideoDecoder * decoder)
   /* gst_v4l2_buffer_pool_flush() calls streamon the capture pool and must be
    * called after gst_v4l2_object_unlock_stop() stopped flushing the buffer
    * pool. */
-
-  if (self->v4l2capture->pool)
-    if (!gst_v4l2_buffer_pool_flush (self->v4l2capture->pool))
+  if (GST_V4L2_IS_ACTIVE (self->v4l2capture)) {
+    if (self->v4l2capture->pool)
+      if (!gst_v4l2_buffer_pool_flush (self->v4l2capture->pool))
+        return FALSE;
+  } else {
+    if (!gst_v4l2_object_streamoff (self->v4l2capture))
       return FALSE;
+  }
 
   return TRUE;
 }
@@ -571,9 +575,10 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     gst_video_codec_state_unref (output_state);
 
     if (!gst_video_decoder_negotiate (decoder)) {
-      if (GST_PAD_IS_FLUSHING (decoder->srcpad))
+      if (GST_PAD_IS_FLUSHING (decoder->srcpad)) {
+        gst_v4l2_object_stop (self->v4l2capture);
         goto flushing;
-      else
+      } else
         goto not_negotiated;
     }
 
@@ -607,6 +612,9 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     if (ret == GST_V4L2_FLOW_SOURCE_CHANGE) {
       GST_DEBUG_OBJECT (decoder, "Received resolution change");
       gst_v4l2_object_stop (self->v4l2capture);
+      /* FIXME: workaround for V4L2 can't allocate buffer before release prevously
+       * buffer */
+      g_usleep (300 * (G_USEC_PER_SEC / 1000));
       return;
     }
 
@@ -742,6 +750,23 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
 
   }
 
+  if (!processed) {
+    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
+    ret =
+        gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL (self->v4l2output->
+            pool), &frame->input_buffer);
+    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    if (ret == GST_FLOW_FLUSHING) {
+      if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=
+          GST_TASK_STARTED)
+        ret = self->output_flow;
+      goto drop;
+    } else if (ret != GST_FLOW_OK) {
+      goto process_failed;
+    }
+  }
+
   task_state = gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self));
   if (task_state == GST_TASK_STOPPED || task_state == GST_TASK_PAUSED) {
     /* It's possible that the processing thread stopped due to an error */
@@ -760,23 +785,6 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
     if (!gst_pad_start_task (decoder->srcpad,
             (GstTaskFunction) gst_v4l2_video_dec_loop, self, NULL))
       goto start_task_failed;
-  }
-
-  if (!processed) {
-    GST_VIDEO_DECODER_STREAM_UNLOCK (decoder);
-    ret =
-        gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL (self->v4l2output->
-            pool), &frame->input_buffer);
-    GST_VIDEO_DECODER_STREAM_LOCK (decoder);
-
-    if (ret == GST_FLOW_FLUSHING) {
-      if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=
-          GST_TASK_STARTED)
-        ret = self->output_flow;
-      goto drop;
-    } else if (ret != GST_FLOW_OK) {
-      goto process_failed;
-    }
   }
 
   /* No need to keep input arround */
