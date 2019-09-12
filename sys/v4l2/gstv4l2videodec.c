@@ -505,8 +505,13 @@ use_acquired_caps:
   gst_video_codec_state_unref (output_state);
 
   ret = GST_VIDEO_DECODER_CLASS (parent_class)->negotiate (decoder);
-  if (!ret)
-    goto not_negotiated;
+  if (!ret) {
+    if (GST_PAD_IS_FLUSHING (decoder->sinkpad)
+        || GST_PAD_IS_FLUSHING (decoder->srcpad))
+      goto flushing;
+    else
+      goto not_negotiated;
+  }
 
   /* The pool may be created through gst_video_decoder_negotiate(), so must
    * be kept after */
@@ -522,6 +527,9 @@ use_acquired_caps:
 
   return TRUE;
 
+flushing:
+  gst_v4l2_object_stop (self->v4l2capture);
+  return FALSE;
 not_negotiated:
   GST_ERROR_OBJECT (self, "not negotiated");
   gst_v4l2_error (self, &error);
