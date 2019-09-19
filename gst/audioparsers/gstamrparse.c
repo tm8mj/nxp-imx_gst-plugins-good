@@ -302,17 +302,20 @@ gst_amr_parse_handle_frame (GstBaseParse * parse,
      *       perform this check)
      */
     if (fsize) {
-      *skipsize = 0;
       /* in sync, no further check */
       if (!GST_BASE_PARSE_LOST_SYNC (parse)) {
         found = TRUE;
+        *skipsize = 0;
       } else if (dsize > fsize) {
         /* enough data, check for next sync */
-        if ((map.data[fsize] & 0x83) == 0)
+        if ((map.data[fsize] & 0x83) == 0) {
           found = TRUE;
+          *skipsize = 0;
+        }
       } else if (GST_BASE_PARSE_DRAINING (parse)) {
         /* not enough, but draining, so ok */
         found = TRUE;
+        *skipsize = 0;
       }
     }
   }
