@@ -1908,10 +1908,6 @@ gst_v4l2_buffer_pool_process (GstV4l2BufferPool * pool, GstBuffer ** buf,
               goto eos;
             }
 
-            if (GST_VIDEO_INFO_FORMAT (&pool->caps_info) !=
-                GST_VIDEO_FORMAT_ENCODED && size < pool->size)
-              goto buffer_truncated;
-
             num_queued = g_atomic_int_get (&pool->num_queued);
             GST_TRACE_OBJECT (pool, "Only %i buffer left in the capture queue.",
                 num_queued);
@@ -2154,14 +2150,6 @@ copy_failed:
   {
     GST_ERROR_OBJECT (pool, "failed to copy buffer");
     return ret;
-  }
-buffer_truncated:
-  {
-    GST_WARNING_OBJECT (pool,
-        "Dropping truncated buffer, this is likely a driver bug.");
-    gst_buffer_unref (*buf);
-    *buf = NULL;
-    return GST_V4L2_FLOW_CORRUPTED_BUFFER;
   }
 eos:
   {
