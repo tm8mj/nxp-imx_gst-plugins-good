@@ -946,7 +946,7 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
     GstStructure *config = gst_buffer_pool_get_config (pool);
     guint min = MAX (self->v4l2output->min_buffers,
         GST_V4L2_MIN_BUFFERS (self->v4l2output));
-    guint max = VIDEO_MAX_FRAME;
+    guint max = min;
     guint32 dummy_frame_number = 0;
 
     GST_DEBUG_OBJECT (self, "Sending header");
