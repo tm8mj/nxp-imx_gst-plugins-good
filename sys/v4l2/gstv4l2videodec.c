@@ -267,6 +267,7 @@ gst_v4l2_video_dec_set_format (GstVideoDecoder * decoder,
   gboolean ret = TRUE;
   gboolean dyn_resolution = self->v4l2output->fmtdesc &&
       (self->v4l2output->fmtdesc->flags & V4L2_FMT_FLAG_DYN_RESOLUTION);
+  GstCaps *caps;
 
   GST_DEBUG_OBJECT (self, "Setting format: %" GST_PTR_FORMAT, state->caps);
 
@@ -308,8 +309,11 @@ gst_v4l2_video_dec_set_format (GstVideoDecoder * decoder,
   }
 
   /* No V4L2_FMT_FLAG_DYN_RESOLUTION or no fmtdesc set yet */
-  if (!dyn_resolution)
-    ret = gst_v4l2_object_set_format (self->v4l2output, state->caps, &error);
+  if (!dyn_resolution) {
+    caps = gst_caps_copy (state->caps);
+    ret = gst_v4l2_object_set_format (self->v4l2output, caps, &error);
+    gst_caps_unref (caps);
+  }
 
   if (GST_V4L2_IS_ACTIVE (self->v4l2output)) {
     self->input_state = gst_video_codec_state_ref (state);
