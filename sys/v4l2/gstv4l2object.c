@@ -5181,7 +5181,8 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
   can_share_own_pool = (has_video_meta || !obj->need_video_meta);
 
   /* aovid copy Amphion tiled frame buffer for un-active video track */
-  if (obj->is_amphion) {
+  /* also to avoid copy Hantro frame buffer when link v4l2 decoder with fakesink */
+  if (obj->is_amphion || obj->is_hantro) {
     can_share_own_pool = TRUE;
     if (min < GST_V4L2_MIN_BUFFERS (obj))
       min = GST_V4L2_MIN_BUFFERS (obj);
