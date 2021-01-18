@@ -2045,9 +2045,9 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
     } else if (g_str_equal (mimetype, "video/x-wmv")) {
       const gchar *format = gst_structure_get_string (structure, "format");
       if (format) {
-        if (!g_ascii_strcasecmp (format, "WMV3"))
+        if (!g_ascii_strcasecmp (format, "WVC1"))
           fourcc = V4L2_PIX_FMT_VC1_ANNEX_G;
-        else if (!g_ascii_strcasecmp (format, "WVC1"))
+        else if (!g_ascii_strcasecmp (format, "WMV3"))
           fourcc = V4L2_PIX_FMT_VC1_ANNEX_L;
       }
     } else if (g_str_equal (mimetype, "video/x-vp8")) {
