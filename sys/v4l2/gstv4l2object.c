@@ -38,11 +38,14 @@
 #include "gstv4l2object.h"
 #include "gstv4l2tuner.h"
 #include "gstv4l2colorbalance.h"
+#include "gstimxcommon.h"
 
 #include <glib/gi18n-lib.h>
 
 #include <gst/video/video.h>
 #include <gst/allocators/gstdmabuf.h>
+#include <gst/allocators/gstdmabufmeta.h>
+#include <libdrm/drm_fourcc.h>
 
 GST_DEBUG_CATEGORY_EXTERN (v4l2_debug);
 #define GST_CAT_DEFAULT v4l2_debug
@@ -155,6 +158,8 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_NV12, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12_10BIT, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12X, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_RFC, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_RFCX, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12M, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12MT, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12MT_16X16, TRUE, GST_V4L2_RAW},
@@ -528,6 +533,9 @@ gst_v4l2_object_new (GstElement * element,
   v4l2object->norms = NULL;
   v4l2object->channels = NULL;
   v4l2object->colors = NULL;
+
+  v4l2object->drm_modifier = 0;
+  v4l2object->is_g2 = FALSE;
 
   v4l2object->keep_aspect = TRUE;
 
@@ -1095,6 +1103,8 @@ gst_v4l2_object_format_get_rank (const struct v4l2_fmtdesc *fmt)
       rank = GREY_BASE_RANK;
       break;
 
+    case V4L2_PIX_FMT_RFC:     /* 8-bit tile output  */
+    case V4L2_PIX_FMT_RFCX:    /* 10-bit tile output  */
     case V4L2_PIX_FMT_NV12MT:  /* NV12 64x32 tile   */
     case V4L2_PIX_FMT_NV21:    /* 12  Y/CrCb 4:2:0  */
     case V4L2_PIX_FMT_NV21M:   /* Same as NV21      */
@@ -1386,10 +1396,12 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
       break;
     case V4L2_PIX_FMT_NV12:
     case V4L2_PIX_FMT_NV12M:
+    case V4L2_PIX_FMT_RFC:
       format = GST_VIDEO_FORMAT_NV12;
       break;
     case V4L2_PIX_FMT_NV12_10BIT:
     case V4L2_PIX_FMT_NV12X:
+    case V4L2_PIX_FMT_RFCX:
       format = GST_VIDEO_FORMAT_NV12_10LE40;
       break;
     case V4L2_PIX_FMT_NV12MT:
@@ -1602,6 +1614,8 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
     case V4L2_PIX_FMT_NV12:    /* 12  Y/CbCr 4:2:0  */
     case V4L2_PIX_FMT_NV12_10BIT:      /* 12  Y/CbCr 4:2:0  */
     case V4L2_PIX_FMT_NV12X:
+    case V4L2_PIX_FMT_RFC:
+    case V4L2_PIX_FMT_RFCX:
     case V4L2_PIX_FMT_NV12M:
     case V4L2_PIX_FMT_NV12MT:
     case V4L2_PIX_FMT_MM21:
@@ -3718,6 +3732,9 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
     goto invalid_caps;
 
   pixelformat = fmtdesc->pixelformat;
+  if (V4L2_TYPE_IS_OUTPUT (v4l2object->type)
+      && (pixelformat == V4L2_PIX_FMT_HEVC || pixelformat == V4L2_PIX_FMT_VP9))
+    v4l2object->is_g2 = TRUE;
   width = GST_VIDEO_INFO_WIDTH (&info);
   height = GST_VIDEO_INFO_FIELD_HEIGHT (&info);
   /* if caps has no width and height info, use default value */
@@ -5153,6 +5170,8 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
   GstAllocator *allocator = NULL;
   GstAllocationParams params = { 0 };
   guint video_idx;
+  gboolean alloc_has_meta = FALSE;
+  guint alloc_index;
 
   GST_DEBUG_OBJECT (obj->dbg_obj, "decide allocation");
 
@@ -5185,6 +5204,86 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
 
   GST_DEBUG_OBJECT (obj->dbg_obj, "allocation: size:%u min:%u max:%u pool:%"
       GST_PTR_FORMAT, size, min, max, pool);
+
+  alloc_has_meta =
+      gst_query_find_allocation_meta (query, GST_DMABUF_META_API_TYPE,
+      &alloc_index);
+
+  if (IS_IMX8MQ () || IS_AMPHION ()) {
+    if (alloc_has_meta) {
+      const GstStructure *params;
+      gchar *meta;
+      gint j, len;
+
+      gst_query_parse_nth_allocation_meta (query, alloc_index, &params);
+      GST_DEBUG_OBJECT (obj->dbg_obj,
+          "Expected field 'GstDmabufMeta' in structure: %" GST_PTR_FORMAT,
+          params);
+      if (params) {
+        const GValue *vdrm_modifier =
+            gst_structure_get_value (params, "dmabuf.drm_modifier");
+        if (GST_VALUE_HOLDS_LIST (vdrm_modifier)) {
+          len = gst_value_list_get_size (vdrm_modifier);
+          for (j = 0; j < len; j++) {
+            const GValue *val;
+            val = gst_value_list_get_value (vdrm_modifier, j);
+            guint64 drm_modifier = g_value_get_uint64 (val);
+            GST_DEBUG_OBJECT (obj->dbg_obj, "dmabuf meta has modifier: %lld",
+                drm_modifier);
+            if (IS_AMPHION () && drm_modifier == DRM_FORMAT_MOD_AMPHION_TILED) {
+              obj->drm_modifier = drm_modifier;
+            } else if (IS_IMX8MQ ()
+                && drm_modifier == DRM_FORMAT_MOD_VSI_G2_TILED_COMPRESSED
+                && obj->is_g2 == TRUE) {
+              obj->drm_modifier = drm_modifier;
+              if (obj->format.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12X)
+                obj->format.fmt.pix.pixelformat = V4L2_PIX_FMT_RFCX;
+              /* Hdr10 video does renegotiation to transfer hdr10 metadata. Capture pixelformat has been
+               * changed from NV12X to RFCX at the first time, so just keep the RFCX format here. */
+              else if (obj->format.fmt.pix.pixelformat != V4L2_PIX_FMT_RFCX)
+                obj->format.fmt.pix.pixelformat = V4L2_PIX_FMT_RFC;
+            } else {
+              GST_WARNING_OBJECT (obj->dbg_obj,
+                  "video sink can't support modifier: %lld",
+                  DRM_FORMAT_MOD_AMPHION_TILED);
+            }
+          }
+        } else if (meta = gst_structure_to_string (params)) {
+          guint64 drm_modifier;
+          GST_DEBUG_OBJECT (obj->dbg_obj, "dmabuf meta has modifier: %s", meta);
+          sscanf (meta, "GstDmabufMeta, dmabuf.drm_modifier=(guint64){ %lld };",
+              &drm_modifier);
+          GST_DEBUG_OBJECT (obj->dbg_obj, "dmabuf meta has modifier: %lld",
+              drm_modifier);
+          if (IS_AMPHION () && drm_modifier == DRM_FORMAT_MOD_AMPHION_TILED) {
+            GST_DEBUG_OBJECT (obj->dbg_obj, "video sink support modifier: %lld",
+                drm_modifier);
+            obj->drm_modifier = drm_modifier;
+          } else if (IS_IMX8MQ ()
+              && drm_modifier == DRM_FORMAT_MOD_VSI_G2_TILED_COMPRESSED
+              && obj->is_g2 == TRUE) {
+            GST_DEBUG_OBJECT (obj->dbg_obj, "video sink support modifier: %lld",
+                drm_modifier);
+            obj->drm_modifier = drm_modifier;
+            if (obj->format.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12X)
+              obj->format.fmt.pix.pixelformat = V4L2_PIX_FMT_RFCX;
+            else if (obj->format.fmt.pix.pixelformat != V4L2_PIX_FMT_RFCX)
+              obj->format.fmt.pix.pixelformat = V4L2_PIX_FMT_RFC;
+          } else {
+            GST_WARNING_OBJECT (obj->dbg_obj,
+                "video sink can't support modifier: %lld",
+                DRM_FORMAT_MOD_AMPHION_TILED);
+          }
+        }
+        if (obj->ioctl (obj->video_fd, VIDIOC_S_FMT, &obj->format) < 0)
+          GST_WARNING_OBJECT (obj->dbg_obj, "VIDIOC_S_FMT failed");
+        else
+          GST_DEBUG_OBJECT (obj->dbg_obj,
+              "Set tiled output format %" GST_FOURCC_FORMAT,
+              GST_FOURCC_ARGS (obj->format.fmt.pix.pixelformat));
+      }
+    }
+  }
 
   has_video_meta =
       gst_query_find_allocation_meta (query, GST_VIDEO_META_API_TYPE,

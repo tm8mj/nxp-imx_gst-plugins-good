@@ -39,6 +39,8 @@
 #include "gst/video/gstvideometa.h"
 #include "gst/video/gstvideopool.h"
 #include "gst/allocators/gstdmabuf.h"
+#include "gst/allocators/gstphymemmeta.h"
+#include "gstimxcommon.h"
 
 #include <gstv4l2bufferpool.h>
 
@@ -1238,6 +1240,7 @@ gst_v4l2_buffer_pool_dqbuf (GstV4l2BufferPool * pool, GstBuffer ** buffer,
   GstClockTime timestamp;
   GstV4l2MemoryGroup *group;
   GstVideoMeta *vmeta;
+  GstPhyMemMeta *pmeta = { 0 };
   gsize size;
   gint i;
   gint old_buffer_state;
@@ -1394,6 +1397,13 @@ gst_v4l2_buffer_pool_dqbuf (GstV4l2BufferPool * pool, GstBuffer ** buffer,
   GST_BUFFER_TIMESTAMP (outbuf) = timestamp;
   GST_BUFFER_OFFSET (outbuf) = group->buffer.sequence;
   GST_BUFFER_OFFSET_END (outbuf) = group->buffer.sequence + 1;
+
+  if (IS_IMX8MQ () && obj->drm_modifier != 0
+      && !V4L2_TYPE_IS_OUTPUT (obj->type)) {
+    pmeta = GST_PHY_MEM_META_ADD (outbuf);
+    pmeta->rfc_luma_offset = group->buffer.reserved;
+    pmeta->rfc_chroma_offset = group->buffer.reserved2;
+  }
 
 done:
   *buffer = outbuf;

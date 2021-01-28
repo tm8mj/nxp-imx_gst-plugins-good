@@ -150,6 +150,8 @@ struct _GstV4l2Object {
   /* Features */
   gboolean need_video_meta;
   gboolean has_alpha_component;
+  guint64 drm_modifier;
+  gboolean is_g2;
 
   /* only used if the device supports MPLANE
    * nb planes is meaning of v4l2 planes
