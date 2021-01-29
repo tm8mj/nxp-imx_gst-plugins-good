@@ -154,6 +154,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   /* two planes -- one Y, one Cr + Cb interleaved  */
   {V4L2_PIX_FMT_NV12, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12_10BIT, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_NV12X, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12M, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12MT, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_NV12MT_16X16, TRUE, GST_V4L2_RAW},
@@ -1124,6 +1125,7 @@ gst_v4l2_object_format_get_rank (const struct v4l2_fmtdesc *fmt)
     case V4L2_PIX_FMT_NV12:    /* Y/CbCr 4:2:0, 12 bits per pixel */
     case V4L2_PIX_FMT_NV12M:   /* Same as NV12      */
     case V4L2_PIX_FMT_NV12_10BIT:      /* 12  Y/CbCr 4:2:0  */
+    case V4L2_PIX_FMT_NV12X:
       rank = YUV_BASE_RANK + 8;
       break;
     case V4L2_PIX_FMT_YUYV:    /* YUY2, 16 bits per pixel */
@@ -1387,6 +1389,7 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
       format = GST_VIDEO_FORMAT_NV12;
       break;
     case V4L2_PIX_FMT_NV12_10BIT:
+    case V4L2_PIX_FMT_NV12X:
       format = GST_VIDEO_FORMAT_NV12_10LE40;
       break;
     case V4L2_PIX_FMT_NV12MT:
@@ -1598,6 +1601,7 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
     case V4L2_PIX_FMT_ABGR32:
     case V4L2_PIX_FMT_NV12:    /* 12  Y/CbCr 4:2:0  */
     case V4L2_PIX_FMT_NV12_10BIT:      /* 12  Y/CbCr 4:2:0  */
+    case V4L2_PIX_FMT_NV12X:
     case V4L2_PIX_FMT_NV12M:
     case V4L2_PIX_FMT_NV12MT:
     case V4L2_PIX_FMT_MM21:
@@ -1903,7 +1907,10 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
         fourcc_nc = V4L2_PIX_FMT_NV12M;
         break;
       case GST_VIDEO_FORMAT_NV12_10LE40:
-        fourcc = V4L2_PIX_FMT_NV12_10BIT;
+        if (v4l2object->is_amphion)
+          fourcc = V4L2_PIX_FMT_NV12_10BIT;
+        else
+          fourcc = V4L2_PIX_FMT_NV12X;
         break;
       case GST_VIDEO_FORMAT_NV12_64Z32:
         fourcc_nc = V4L2_PIX_FMT_NV12MT;
@@ -4379,6 +4386,9 @@ gst_v4l2_object_acquire_format (GstV4l2Object * v4l2object, GstVideoInfo * info)
   fmt.type = v4l2object->type;
   if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_G_FMT, &fmt) < 0)
     goto get_fmt_failed;
+
+  if (!IS_IMX8MQ () && fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_NV12X)
+    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_NV12;
 
   fmtdesc = gst_v4l2_object_get_format_from_fourcc (v4l2object,
       fmt.fmt.pix.pixelformat);

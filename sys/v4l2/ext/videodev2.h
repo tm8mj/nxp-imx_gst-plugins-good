@@ -602,6 +602,7 @@ struct v4l2_pix_format {
 #define V4L2_PIX_FMT_NV21M   v4l2_fourcc('N', 'M', '2', '1') /* 21  Y/CrCb 4:2:0  */
 #define V4L2_PIX_FMT_NV16M   v4l2_fourcc('N', 'M', '1', '6') /* 16  Y/CbCr 4:2:2  */
 #define V4L2_PIX_FMT_NV61M   v4l2_fourcc('N', 'M', '6', '1') /* 16  Y/CrCb 4:2:2  */
+#define V4L2_PIX_FMT_NV12X	 v4l2_fourcc('N', 'V', 'X', '2') /* Y/CbCr 4:2:0 for 10bit  */
 #define V4L2_PIX_FMT_NV12_10BIT   v4l2_fourcc('N', 'T', '1', '2') /* Y/CbCr 4:2:0 for 10bit  */
 
 /* three planes - Y Cb, Cr */
