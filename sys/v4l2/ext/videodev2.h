@@ -281,6 +281,7 @@ enum v4l2_xfer_func {
 	V4L2_XFER_FUNC_NONE        = 5,
 	V4L2_XFER_FUNC_DCI_P3      = 6,
 	V4L2_XFER_FUNC_SMPTE2084   = 7,
+	V4L2_XFER_FUNC_HLG         = 8,
 };
 
 /*
@@ -1760,6 +1761,18 @@ struct v4l2_ext_controls {
 	__s32 request_fd;
 	__u32 reserved[1];
 	struct v4l2_ext_control *controls;
+};
+
+struct v4l2_hdr10_meta {
+	__u32 hasHdr10Meta;
+	__u32 redPrimary[2];
+	__u32 greenPrimary[2];
+	__u32 bluePrimary[2];
+	__u32 whitePoint[2];
+	__u32 maxMasteringLuminance;
+	__u32 minMasteringLuminance;
+	__u32 maxContentLightLevel;
+	__u32 maxFrameAverageLightLevel;
 };
 
 #define V4L2_CTRL_ID_MASK	  (0x0fffffff)
