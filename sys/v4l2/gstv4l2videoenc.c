@@ -113,6 +113,9 @@ gst_v4l2_video_enc_open (GstVideoEncoder * encoder)
   GstV4l2Error error = GST_V4L2_ERROR_INIT;
   GstCaps *codec_caps;
 
+  g_print ("\n====== V4L2ENC: %s build on %s %s. ======\n", (VERSION), __DATE__,
+      __TIME__);
+
   GST_DEBUG_OBJECT (self, "Opening");
 
   if (!gst_v4l2_object_open (self->v4l2output, &error))
