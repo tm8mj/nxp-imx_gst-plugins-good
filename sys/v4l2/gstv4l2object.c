@@ -3625,6 +3625,14 @@ gst_v4l2_video_colorimetry_matches (const GstVideoColorimetry * cinfo,
     GST_VIDEO_COLOR_RANGE_0_255, GST_VIDEO_COLOR_MATRIX_BT601,
     GST_VIDEO_TRANSFER_SRGB, GST_VIDEO_COLOR_PRIMARIES_BT709
   };
+  static const GstVideoColorimetry ci_likely_uvc = {
+    GST_VIDEO_COLOR_RANGE_0_255, GST_VIDEO_COLOR_MATRIX_BT601,
+    GST_VIDEO_TRANSFER_SRGB, GST_VIDEO_COLOR_PRIMARIES_BT709
+  };
+  static const GstVideoColorimetry ci_uvc = {
+    GST_VIDEO_COLOR_RANGE_0_255, GST_VIDEO_COLOR_MATRIX_BT601,
+    GST_VIDEO_TRANSFER_BT709, GST_VIDEO_COLOR_PRIMARIES_BT709
+  };
 
   if (!gst_video_info_from_caps (&info, caps))
     return FALSE;
@@ -3643,8 +3651,11 @@ gst_v4l2_video_colorimetry_matches (const GstVideoColorimetry * cinfo,
     return TRUE;
 
   /* Allow 1:4:0:0 (produced by jpegdec) if the device expects 1:4:7:1 */
-  if (gst_video_colorimetry_is_equal (&info.colorimetry, &ci_likely_jpeg)
-      && gst_video_colorimetry_is_equal (cinfo, &ci_jpeg))
+  /* Allow 1:4:5:1 (produced by uvc driver) if desired colorspace is 1:4:7:1) */
+  if ((gst_video_colorimetry_is_equal (&info.colorimetry, &ci_likely_jpeg)
+          && gst_video_colorimetry_is_equal (cinfo, &ci_jpeg))
+      || (gst_video_colorimetry_is_equal (&info.colorimetry, &ci_likely_uvc)
+          && gst_video_colorimetry_is_equal (cinfo, &ci_uvc)))
     return TRUE;
 
   /* bypass check the below transfer types, because those types are cast to
