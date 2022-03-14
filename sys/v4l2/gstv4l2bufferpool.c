@@ -1151,6 +1151,7 @@ gst_v4l2_buffer_pool_qbuf (GstV4l2BufferPool * pool, GstBuffer * buf,
 
   index = group->buffer.index;
 
+  GST_OBJECT_LOCK (pool);
   old_buffer_state =
       g_atomic_int_or (&pool->buffer_state[index], BUFFER_STATE_QUEUED);
   if (old_buffer_state & BUFFER_STATE_QUEUED)
@@ -1184,8 +1185,6 @@ gst_v4l2_buffer_pool_qbuf (GstV4l2BufferPool * pool, GstBuffer * buf,
     }
   }
 
-  GST_OBJECT_LOCK (pool);
-
   /* If the pool was orphaned, don't try to queue any returned buffers.
    * This is done with the objet lock in order to synchronize with
    * orphaning. */
@@ -1207,6 +1206,7 @@ gst_v4l2_buffer_pool_qbuf (GstV4l2BufferPool * pool, GstBuffer * buf,
 already_queued:
   {
     GST_ERROR_OBJECT (pool, "the buffer %i was already queued", index);
+    GST_OBJECT_UNLOCK (pool);
     return GST_FLOW_ERROR;
   }
 was_orphaned:
