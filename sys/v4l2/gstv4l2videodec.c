@@ -913,7 +913,7 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
     goto beach;
 
   if (GST_BUFFER_TIMESTAMP (buffer) % GST_SECOND != 0)
-    GST_ERROR_OBJECT (decoder,
+    GST_WARNING_OBJECT (decoder,
         "Driver bug detected - check driver with v4l2-compliance from http://git.linuxtv.org/v4l-utils.git");
   GST_LOG_OBJECT (decoder, "Got buffer for frame number %u",
       (guint32) (GST_BUFFER_TIMESTAMP (buffer) / GST_SECOND));

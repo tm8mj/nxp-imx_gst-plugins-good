@@ -687,7 +687,7 @@ gst_v4l2_video_enc_loop (GstVideoEncoder * encoder)
     goto beach;
 
   if (GST_BUFFER_TIMESTAMP (buffer) % GST_SECOND != 0)
-    GST_ERROR_OBJECT (encoder,
+    GST_WARNING_OBJECT (encoder,
         "Driver bug detected - check driver with v4l2-compliance from http://git.linuxtv.org/v4l-utils.git");
   GST_LOG_OBJECT (encoder, "Got buffer for frame number %u",
       (guint32) (GST_BUFFER_PTS (buffer) / GST_SECOND));
