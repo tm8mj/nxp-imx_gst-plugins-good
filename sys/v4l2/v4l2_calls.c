@@ -605,7 +605,8 @@ gst_v4l2_open (GstV4l2Object * v4l2object, GstV4l2Error * error)
     v4l2object->dont_use_dmabuf = TRUE;
   }
 
-  if (!strcmp ((char *) v4l2object->vcap.driver, "vpu B0")) {
+  if ((!strcmp ((char *) v4l2object->vcap.driver, "vpu B0")) ||
+    (!strcmp ((char *) v4l2object->vcap.driver, "amphion-vpu"))) {
     v4l2object->is_amphion = TRUE;
   }
 
