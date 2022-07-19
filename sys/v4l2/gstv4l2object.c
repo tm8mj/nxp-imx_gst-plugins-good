@@ -2191,6 +2191,7 @@ gst_v4l2_object_get_interlace_mode (enum v4l2_field field,
     case V4L2_FIELD_INTERLACED:
     case V4L2_FIELD_INTERLACED_TB:
     case V4L2_FIELD_INTERLACED_BT:
+    case V4L2_FIELD_SEQ_TB:
       *interlace_mode = GST_VIDEO_INTERLACE_MODE_INTERLEAVED;
       return TRUE;
     case V4L2_FIELD_ALTERNATE:
@@ -4062,8 +4063,15 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
   if (gst_v4l2_object_get_interlace_mode (format.fmt.pix.field,
           &info.interlace_mode)) {
     if (gst_structure_has_field (s, "interlace-mode")) {
-      if (format.fmt.pix.field != field)
-        goto invalid_field;
+      if ((format.fmt.pix.field == V4L2_FIELD_SEQ_TB)
+          && (field == V4L2_FIELD_INTERLACED)) {
+        GST_DEBUG_OBJECT (v4l2object->dbg_obj,
+            "bypass field check if field from driver: %s and current field: %s",
+            field_to_str (format.fmt.pix.field), field_to_str (field));
+      } else {
+        if (format.fmt.pix.field != field)
+          goto invalid_field;
+      }
     }
   } else {
     /* The driver (or libv4l2) is miss-behaving, just ignore interlace-mode from
@@ -4466,6 +4474,7 @@ gst_v4l2_object_acquire_format (GstV4l2Object * v4l2object, GstVideoInfo * info)
     case V4L2_FIELD_INTERLACED:
     case V4L2_FIELD_INTERLACED_TB:
     case V4L2_FIELD_INTERLACED_BT:
+    case V4L2_FIELD_SEQ_TB:
       interlace_mode = GST_VIDEO_INTERLACE_MODE_INTERLEAVED;
       break;
     case V4L2_FIELD_ALTERNATE:
