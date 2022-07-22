@@ -761,9 +761,27 @@ gst_v4l2_buffer_pool_streamoff (GstV4l2BufferPool * pool)
       if (!(old_buffer_state & BUFFER_STATE_OUTSTANDING)) {
         if (V4L2_TYPE_IS_OUTPUT (pool->obj->type))
           gst_v4l2_buffer_pool_complete_release_buffer (bpool, buffer, FALSE);
+        else {
+          /* in some cases, the total size of buffer is
+          greater than the pool configured size. Need to
+          resize it to avoid free buffer when release it */
+          gsize buf_size;
+          gsize offset;
 
-        else                    /* Don't re-enqueue capture buffer on stop */
+          buf_size = gst_buffer_get_size(buffer);
+          if (obj->info.size < buf_size) {
+            gst_buffer_get_sizes (buffer, &offset, NULL);
+            gst_buffer_resize (buffer, -offset, obj->info.size);
+
+            GST_DEBUG_OBJECT (pool, "pool size: %" G_GSIZE_FORMAT
+            ", capture buffer size: %" G_GSIZE_FORMAT
+            ", need to resize capture buffer to avoid free it",
+            obj->info.size, buf_size);
+          }
+
+          /* Don't re-enqueue capture buffer on stop */
           pclass->release_buffer (bpool, buffer);
+        }
       }
 
       g_atomic_int_add (&pool->num_queued, -1);
