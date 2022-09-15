@@ -4879,6 +4879,12 @@ gst_v4l2_object_probe_caps (GstV4l2Object * v4l2object, GstCaps * filter)
     GstCaps *tmp;
 
     format = (struct v4l2_fmtdesc *) walk->data;
+    if (!IS_IMX8MQ () && format->pixelformat == V4L2_PIX_FMT_NV12X) {
+      GST_DEBUG_OBJECT (v4l2object->dbg_obj,
+          "skip format %" GST_FOURCC_FORMAT,
+          GST_FOURCC_ARGS (format->pixelformat));
+      continue;
+    }
 
     template = gst_v4l2_object_v4l2fourcc_to_bare_struct (format->pixelformat);
 
