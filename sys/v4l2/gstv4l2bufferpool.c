@@ -351,12 +351,15 @@ gst_v4l2_buffer_pool_import_dmabuf (GstV4l2BufferPool * pool,
   GstV4l2MemoryGroup *group = NULL;
   GstMemory *dma_mem[GST_VIDEO_MAX_PLANES] = { 0 };
   guint n_mem = gst_buffer_n_memory (src);
+  GstVideoMeta *vmeta;
   gint i;
 
   GST_LOG_OBJECT (pool, "importing dmabuf");
 
   if (!gst_v4l2_is_buffer_valid (dest, &group))
     goto not_our_buffer;
+
+  vmeta = gst_buffer_get_video_meta (src);
 
   if (n_mem > GST_VIDEO_MAX_PLANES)
     goto too_many_mems;
@@ -365,7 +368,7 @@ gst_v4l2_buffer_pool_import_dmabuf (GstV4l2BufferPool * pool,
     dma_mem[i] = gst_buffer_peek_memory (src, i);
 
   if (!gst_v4l2_allocator_import_dmabuf (pool->vallocator, group, n_mem,
-          dma_mem))
+          dma_mem, vmeta))
     goto import_failed;
 
   gst_mini_object_set_qdata (GST_MINI_OBJECT (dest), GST_V4L2_IMPORT_QUARK,

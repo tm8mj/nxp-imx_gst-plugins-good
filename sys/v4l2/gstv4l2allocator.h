@@ -141,7 +141,8 @@ GstV4l2MemoryGroup * gst_v4l2_allocator_alloc_userptr  (GstV4l2Allocator * alloc
 
 gboolean             gst_v4l2_allocator_import_dmabuf  (GstV4l2Allocator * allocator,
                                                         GstV4l2MemoryGroup *group,
-                                                        gint n_mem, GstMemory ** dma_mem);
+                                                        gint n_mem, GstMemory ** dma_mem,
+                                                        GstVideoMeta *vmeta);
 
 gboolean             gst_v4l2_allocator_import_userptr (GstV4l2Allocator * allocator,
                                                         GstV4l2MemoryGroup *group,

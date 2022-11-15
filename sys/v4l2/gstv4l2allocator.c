@@ -31,6 +31,7 @@
 #include "gstv4l2allocator.h"
 
 #include <gst/allocators/gstdmabuf.h>
+#include <gst/video/gstvideometa.h>
 
 #include <fcntl.h>
 #include <string.h>
@@ -1090,44 +1091,117 @@ gst_v4l2_allocator_alloc_userptr (GstV4l2Allocator * allocator)
 
 gboolean
 gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
-    GstV4l2MemoryGroup * group, gint n_mem, GstMemory ** dma_mem)
+    GstV4l2MemoryGroup * group, gint n_mem, GstMemory ** dma_mem,
+    GstVideoMeta * vmeta)
 {
   GstV4l2Object *obj = allocator->obj;
-  GstV4l2Memory *mem;
-  gint i;
+  GstV4l2Memory *mem, *mem_tmp;
+  gint i = 0;
+  gint dmafd;
+  gsize size, offset, maxsize;
 
   g_return_val_if_fail (allocator->memory == V4L2_MEMORY_DMABUF, FALSE);
 
-  if (group->n_mem != n_mem)
-    goto n_mem_missmatch;
+  if (vmeta) {
+    if (group->n_mem != vmeta->n_planes)
+      goto n_mem_missmatch;
+  } else {
+    if (group->n_mem != n_mem)
+      goto n_mem_missmatch;
+  }
 
-  for (i = 0; i < group->n_mem; i++) {
-    gint dmafd;
-    gsize size, offset, maxsize;
+  if (group->n_mem == n_mem) {
+    for (i = 0; i < group->n_mem; i++) {
+      if (!gst_is_dmabuf_memory (dma_mem[i]))
+        goto not_dmabuf;
 
-    if (!gst_is_dmabuf_memory (dma_mem[i]))
+      size = gst_memory_get_sizes (dma_mem[i], &offset, &maxsize);
+      dmafd = gst_dmabuf_memory_get_fd (dma_mem[i]);
+
+      GST_LOG_OBJECT (allocator, "[%i] imported DMABUF as fd %i plane %d",
+          group->buffer.index, dmafd, i);
+
+      mem = (GstV4l2Memory *) group->mem[i];
+
+      /* Update memory */
+      mem->mem.maxsize = maxsize;
+      mem->mem.offset = offset;
+      mem->mem.size = size;
+      mem->dmafd = dmafd;
+
+      /* Update v4l2 structure */
+      group->planes[i].length = maxsize;
+      group->planes[i].bytesused = size + offset;
+      group->planes[i].m.fd = dmafd;
+      group->planes[i].data_offset = offset;
+    }
+  } else if (n_mem == 1) {      // in case all planes are in one memory block
+    if (!gst_is_dmabuf_memory (dma_mem[0]))
       goto not_dmabuf;
 
-    size = gst_memory_get_sizes (dma_mem[i], &offset, &maxsize);
+    size = gst_memory_get_sizes (dma_mem[0], &offset, &maxsize);
+    dmafd = gst_dmabuf_memory_get_fd (dma_mem[0]);
 
-    dmafd = gst_dmabuf_memory_get_fd (dma_mem[i]);
+    GST_LOG_OBJECT (allocator, "%d planes are in 1 memory block",
+        vmeta->n_planes);
 
-    GST_LOG_OBJECT (allocator, "[%i] imported DMABUF as fd %i plane %d",
-        group->buffer.index, dmafd, i);
-
-    mem = (GstV4l2Memory *) group->mem[i];
+    mem = (GstV4l2Memory *) group->mem[0];
 
     /* Update memory */
-    mem->mem.maxsize = maxsize;
-    mem->mem.offset = offset;
-    mem->mem.size = size;
+    mem->mem.maxsize = vmeta->offset[1];
+    mem->mem.offset = vmeta->offset[0];
+    mem->mem.size = vmeta->offset[1];
     mem->dmafd = dmafd;
 
     /* Update v4l2 structure */
-    group->planes[i].length = maxsize;
-    group->planes[i].bytesused = size + offset;
-    group->planes[i].m.fd = dmafd;
-    group->planes[i].data_offset = offset;
+    group->planes[0].length = mem->mem.maxsize;
+    group->planes[0].bytesused = mem->mem.size;
+    group->planes[0].m.fd = dmafd;
+    group->planes[0].data_offset = mem->mem.offset;
+
+    if (group->n_mem == 2) {
+      mem = (GstV4l2Memory *) group->mem[1];
+
+      /* Update memory */
+      mem->mem.maxsize = maxsize;
+      mem->mem.offset = vmeta->offset[1];
+      mem->mem.size = size;
+      mem->dmafd = dmafd;
+
+      /* Update v4l2 structure */
+      group->planes[1].length = mem->mem.maxsize;
+      group->planes[1].bytesused = mem->mem.size;
+      group->planes[1].m.fd = dmafd;
+      group->planes[1].data_offset = mem->mem.offset;
+    } else if (group->n_mem == 3) {
+      mem = (GstV4l2Memory *) group->mem[1];
+
+      /* Update memory */
+      mem->mem.maxsize = vmeta->offset[2];
+      mem->mem.offset = vmeta->offset[1];
+      mem->mem.size = vmeta->offset[2];
+      mem->dmafd = dmafd;
+
+      /* Update v4l2 structure */
+      group->planes[1].length = mem->mem.maxsize;
+      group->planes[1].bytesused = mem->mem.size;
+      group->planes[1].m.fd = dmafd;
+      group->planes[1].data_offset = mem->mem.offset;
+
+      mem = (GstV4l2Memory *) group->mem[2];
+
+      /* Update memory */
+      mem->mem.maxsize = maxsize;
+      mem->mem.offset = vmeta->offset[2];
+      mem->mem.size = size;
+      mem->dmafd = dmafd;
+
+      /* Update v4l2 structure */
+      group->planes[2].length = mem->mem.maxsize;
+      group->planes[2].bytesused = mem->mem.size;
+      group->planes[2].m.fd = dmafd;
+      group->planes[2].data_offset = mem->mem.offset;
+    }
   }
 
   /* Copy into buffer structure if not using planes */
