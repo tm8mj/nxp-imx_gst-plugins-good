@@ -122,6 +122,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_Y6, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_Y10, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_Y12, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_Y012, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_Y16, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_Y16_BE, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_Y10BPACK, TRUE, GST_V4L2_RAW},
@@ -1354,6 +1355,9 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
     case V4L2_PIX_FMT_GREY:    /*  8  Greyscale     */
       format = GST_VIDEO_FORMAT_GRAY8;
       break;
+    case V4L2_PIX_FMT_Y012:
+      format = GST_VIDEO_FORMAT_Y012_LE;
+      break;
     case V4L2_PIX_FMT_Y16:
       format = GST_VIDEO_FORMAT_GRAY16_LE;
       break;
@@ -1621,6 +1625,7 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
       structure = gst_structure_new_empty ("video/x-vp9");
       break;
     case V4L2_PIX_FMT_GREY:    /*  8  Greyscale     */
+    case V4L2_PIX_FMT_Y012:
     case V4L2_PIX_FMT_Y16:
     case V4L2_PIX_FMT_Y16_BE:
     case V4L2_PIX_FMT_XRGB555:
@@ -2054,6 +2059,9 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
         break;
       case GST_VIDEO_FORMAT_BGRA_12LE:
         fourcc = V4L2_PIX_FMT_B412;
+        break;
+      case GST_VIDEO_FORMAT_Y012_LE:
+        fourcc = V4L2_PIX_FMT_Y012;
         break;
       case GST_VIDEO_FORMAT_GRAY16_LE:
         fourcc = V4L2_PIX_FMT_Y16;
