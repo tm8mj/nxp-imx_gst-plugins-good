@@ -850,12 +850,14 @@ downloadhelper_submit_request (DownloadHelper * dh,
     return FALSE;
   }
 
+#if 0
   /* NOTE: There was a bug where Akamai servers return the
    * wrong result for a range request on small files. To avoid
    * it if the range starts within the first KB of the file, just
    * start at 0 instead */
   if (request->range_start < 1024)
     request->range_start = 0;
+#endif
 
   msg_headers = _soup_message_get_request_headers (msg);
 
