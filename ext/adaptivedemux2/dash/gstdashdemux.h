@@ -39,6 +39,7 @@
 #include <gst/base/gstdataqueue.h>
 
 #include "gstisoff.h"
+#include <gstmatroska.h>
 #include "gstadaptivedemux.h"
 
 #include "gstmpdclient.h"
@@ -104,6 +105,8 @@ struct _GstDashDemux2Stream
     guint64 current_start_offset;
     guint64 current_size;
   } isobmff_parser;
+  /* matroska parsing */
+  GstMatroskaParser matroska_parser;
 
   GstMoofBox *moof;
   guint64 moof_offset, moof_size;

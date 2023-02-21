@@ -40,6 +40,7 @@ smoothstreaming_sources = [
 plugin_sources = [
   'plugin.c',
   'gstisoff.c',
+  'gstmatroska.c',
   'gstadaptivedemux.c',
   'gstadaptivedemuxelement.c',
   'gstadaptivedemuxutils.c',
