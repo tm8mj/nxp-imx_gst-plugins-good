@@ -199,7 +199,6 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_H264_NO_SC, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_H264_MVC, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_HEVC, FALSE, GST_V4L2_CODEC},
-  {V4L2_PIX_FMT_RV, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_VP6, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_AVS, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_SPK, FALSE, GST_V4L2_CODEC},
@@ -214,6 +213,8 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_VC1_ANNEX_L, FALSE, GST_V4L2_CODEC},
   {V4L2_PIX_FMT_VP8, FALSE, GST_V4L2_CODEC | GST_V4L2_NO_PARSE},
   {V4L2_PIX_FMT_VP9, FALSE, GST_V4L2_CODEC | GST_V4L2_NO_PARSE},
+  {V4L2_PIX_FMT_RV30, FALSE, GST_V4L2_CODEC},
+  {V4L2_PIX_FMT_RV40, FALSE, GST_V4L2_CODEC},
 
   /*  Vendor-specific formats   */
   {V4L2_PIX_FMT_WNVA, TRUE, GST_V4L2_CODEC},
@@ -1607,8 +1608,13 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
           "stream-format", G_TYPE_STRING, "byte-stream", "alignment",
           G_TYPE_STRING, "au", NULL);
       break;
-    case V4L2_PIX_FMT_RV:
-      structure = gst_structure_new_empty ("video/x-pn-realvideo");
+    case V4L2_PIX_FMT_RV30:
+      structure = gst_structure_new ("video/x-pn-realvideo",
+          "version", G_TYPE_INT, 3, NULL);
+      break;
+    case V4L2_PIX_FMT_RV40:
+      structure = gst_structure_new ("video/x-pn-realvideo",
+          "version", G_TYPE_INT, 4, NULL);
       break;
     case V4L2_PIX_FMT_VP6:
       structure = gst_structure_new_empty ("video/x-vp6-flash");
@@ -2132,7 +2138,19 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
     } else if (g_str_equal (mimetype, "video/x-h265")) {
       fourcc = V4L2_PIX_FMT_HEVC;
     } else if (g_str_equal (mimetype, "video/x-pn-realvideo")) {
-      fourcc = V4L2_PIX_FMT_RV;
+      gint version;
+      if (gst_structure_get_int (structure, "version", &version)) {
+        switch (version) {
+          case 3:
+            fourcc = V4L2_PIX_FMT_RV30;
+            break;
+          case 4:
+            fourcc = V4L2_PIX_FMT_RV40;
+            break;
+          default:
+            break;
+        }
+      }
     } else if (g_str_equal (mimetype, "video/x-vp6-flash")) {
       fourcc = V4L2_PIX_FMT_VP6;
     } else if (g_str_equal (mimetype, "video/x-cavs")) {
