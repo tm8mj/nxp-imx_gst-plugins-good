@@ -354,6 +354,8 @@ static void gst_dash_demux_dispose (GObject * obj);
 /* GstAdaptiveDemuxStream */
 static GstFlowReturn
 gst_dash_demux_stream_update_fragment_info (GstAdaptiveDemux2Stream * stream);
+static void
+gst_dash_demux_stream_create_tracks (GstAdaptiveDemux2Stream * stream);
 static GstClockTime
 gst_dash_demux_stream_get_presentation_offset (GstAdaptiveDemux2Stream *
     stream);
@@ -499,6 +501,8 @@ gst_dash_demux_stream_class_init (GstDashDemux2StreamClass * klass)
       gst_dash_demux_stream_data_received;
   adaptivedemux2stream_class->need_another_chunk =
       gst_dash_demux_stream_need_another_chunk;
+  adaptivedemux2stream_class->create_tracks =
+      gst_dash_demux_stream_create_tracks;
 }
 
 
@@ -902,6 +906,12 @@ gst_dash_demux_setup_all_streams (GstDashDemux2 * demux)
         gst_mpd_client2_has_isoff_ondemand_profile (demux->client);
     stream->is_isobmff = gst_structure_has_name (s, "video/quicktime")
         || gst_structure_has_name (s, "audio/x-m4a");
+
+    /* For mpegts stream, both video and audio track in one stream,
+     * need add the remain track lately */
+    if (gst_structure_has_name (s, "video/mpegts")) {
+      GST_ADAPTIVE_DEMUX2_STREAM_CAST (stream)->pending_tracks = TRUE;
+    }
     gst_adaptive_demux2_stream_set_caps (GST_ADAPTIVE_DEMUX2_STREAM_CAST
         (stream), caps);
     if (tags)
@@ -920,6 +930,37 @@ gst_dash_demux_setup_all_streams (GstDashDemux2 * demux)
   }
 
   return TRUE;
+}
+
+static void
+gst_dash_demux_stream_create_tracks (GstAdaptiveDemux2Stream * stream)
+{
+  guint i;
+
+  /* Use the stream->stream_collection and manifest to check and
+   * create the tracks which has not yet been created */
+  for (i = 0; i < gst_stream_collection_get_size (stream->stream_collection); i++) {
+    GstStream *gst_stream =
+        gst_stream_collection_get_stream (stream->stream_collection, i);
+    GstStreamType stream_type = gst_stream_get_stream_type (gst_stream);
+    GstAdaptiveDemuxTrack *track;
+    gchar *stream_id;
+
+    /* Check whether the track which has been created or it's unknown  */
+    if (stream_type == stream->stream_type || stream_type == GST_STREAM_TYPE_UNKNOWN)
+      continue;
+
+    GST_DEBUG_OBJECT (stream, "create track type %d of the stream", stream_type);
+    stream_id = g_strdup_printf ("%s-%d", gst_stream_type_get_name (stream_type), i);
+    /* Create the track this stream provides */
+    track = gst_adaptive_demux_track_new (stream->demux,
+        stream_type, GST_STREAM_FLAG_NONE, stream_id, NULL, NULL);
+    g_free (stream_id);
+
+    track->upstream_stream_id = g_strdup (gst_stream_get_stream_id (gst_stream));
+    gst_adaptive_demux2_stream_add_track (stream, track);
+    gst_adaptive_demux_track_unref (track);
+  }
 }
 
 static void
