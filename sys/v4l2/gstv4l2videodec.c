@@ -358,6 +358,8 @@ gst_v4l2_video_dec_flush (GstVideoDecoder * decoder)
     return TRUE;
 
   self->output_flow = GST_FLOW_OK;
+  self->v4l2output->frame_decoded = FALSE;
+  self->v4l2output->err_cnt = 0;
 
   gst_v4l2_object_unlock_stop (self->v4l2output);
   gst_v4l2_object_unlock_stop (self->v4l2capture);
@@ -1140,6 +1142,18 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
         gst_v4l2_buffer_pool_process (GST_V4L2_BUFFER_POOL (pool),
         &frame->input_buffer, &frame->system_frame_number);
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
+
+    if (self->v4l2output->err_cnt > MAX_OUTPUT_ERROR_COUNT) {
+      if (!self->v4l2output->frame_decoded) {
+        self->v4l2output->frame_decoded = TRUE;
+
+        /* If there are over 50 continuous frames that cannot be decoded from start
+         * or after seek, send gap event to finish preroll */
+        gst_pad_push_event (decoder->srcpad, gst_event_new_gap (0, GST_CLOCK_TIME_NONE));
+      }
+      ret = GST_FLOW_EOS;
+      goto drop;
+    }
 
     if (ret == GST_FLOW_FLUSHING) {
       if (gst_pad_get_task_state (GST_VIDEO_DECODER_SRC_PAD (self)) !=

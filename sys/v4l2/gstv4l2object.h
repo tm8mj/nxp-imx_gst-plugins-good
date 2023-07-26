@@ -153,6 +153,8 @@ struct _GstV4l2Object {
   gboolean has_alpha_component;
   guint64 drm_modifier;
   gboolean is_g2;
+  gboolean frame_decoded;
+  guint32 err_cnt;
 
   /* only used if the device supports MPLANE
    * nb planes is meaning of v4l2 planes

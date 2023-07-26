@@ -544,6 +544,8 @@ gst_v4l2_object_new (GstElement * element,
 
   v4l2object->drm_modifier = 0;
   v4l2object->is_g2 = FALSE;
+  v4l2object->frame_decoded = FALSE;
+  v4l2object->err_cnt = 0;
 
   v4l2object->keep_aspect = TRUE;
 

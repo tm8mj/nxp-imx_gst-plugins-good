@@ -48,6 +48,8 @@ G_BEGIN_DECLS
 
 #define GST_V4L2_MEMORY_QUARK gst_v4l2_memory_quark ()
 
+#define MAX_OUTPUT_ERROR_COUNT 50
+
 typedef struct _GstV4l2Allocator GstV4l2Allocator;
 typedef struct _GstV4l2AllocatorClass GstV4l2AllocatorClass;
 typedef struct _GstV4l2MemoryGroup GstV4l2MemoryGroup;
