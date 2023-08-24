@@ -849,7 +849,7 @@ gst_hls_media_playlist_seek (GstHLSMediaPlaylist * playlist, gboolean forward,
         goto out;
       }
     } else if ((cand->stream_time <= ts || idx == 0)
-        && ts < cand->stream_time + cand->duration) {
+        && ts < (GstClockTimeDiff) (cand->stream_time + cand->duration)) {
       res = cand;
       goto out;
     }
