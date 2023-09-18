@@ -1268,6 +1268,33 @@ gst_pulseringbuffer_pause (GstAudioRingBuffer * buf)
   psink = GST_PULSESINK_CAST (GST_OBJECT_PARENT (pbuf));
 
   pa_threaded_mainloop_lock (mainloop);
+
+  /* For some cases such as EOS, there is no audio data
+   * to write but the stream writeable size keeps increasing.
+   * Should clear it if it exceeds the target buffer length
+   * when the play is paused. */
+  size_t writeable = pa_stream_writable_size (pbuf->stream);
+  if (writeable != (size_t) - 1) {
+    guint bufsize = buf->spec.segsize * buf->spec.segtotal;
+
+    if (writeable > bufsize && !pbuf->in_commit) {
+      size_t towrite = buf->spec.segsize;
+      gint64 m_offset = writeable - towrite;
+      gint bpf = GST_AUDIO_INFO_BPF (&buf->spec.info);
+
+      m_offset /= bpf;
+      m_offset *= bpf;
+      pa_stream_begin_write (pbuf->stream, &pbuf->m_data, &towrite);
+      memset (pbuf->m_data, 0, towrite);
+      pa_stream_write (pbuf->stream, (uint8_t *) pbuf->m_data,
+                towrite, NULL, m_offset, PA_SEEK_RELATIVE);
+
+      GST_INFO_OBJECT (psink, "writeable length %" G_GSIZE_FORMAT
+          ", flush %" G_GSIZE_FORMAT "samples at relative offset %" G_GINT64_FORMAT,
+        writeable, towrite / bpf, m_offset);
+    }
+  }
+
   GST_DEBUG_OBJECT (psink, "pausing and corking");
   /* make sure the commit method stops writing */
   pbuf->paused = TRUE;
