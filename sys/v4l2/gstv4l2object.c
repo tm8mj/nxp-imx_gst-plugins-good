@@ -181,6 +181,7 @@ static const GstV4L2FormatDesc gst_v4l2_formats[] = {
   {V4L2_PIX_FMT_MM21, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_P012, TRUE, GST_V4L2_RAW},
   {V4L2_PIX_FMT_P012M, TRUE, GST_V4L2_RAW},
+  {V4L2_PIX_FMT_P010, TRUE, GST_V4L2_RAW},
 
   /* Bayer formats - see http://www.siliconimaging.com/RGB%20Bayer.htm */
   {V4L2_PIX_FMT_SBGGR8, TRUE, GST_V4L2_RAW},
@@ -1140,6 +1141,7 @@ gst_v4l2_object_format_get_rank (const struct v4l2_fmtdesc *fmt)
     case V4L2_PIX_FMT_YUV24:   /* 24  YUY 4:4:4     */
     case V4L2_PIX_FMT_P012:
     case V4L2_PIX_FMT_P012M:
+    case V4L2_PIX_FMT_P010:
     case V4L2_PIX_FMT_Y212:
     case V4L2_PIX_FMT_Y312:
       rank = YUV_ODD_BASE_RANK;
@@ -1450,6 +1452,9 @@ gst_v4l2_object_v4l2fourcc_to_video_format (guint32 fourcc)
     case V4L2_PIX_FMT_P012M:
       format = GST_VIDEO_FORMAT_P012_LE;
       break;
+    case V4L2_PIX_FMT_P010:
+      format = GST_VIDEO_FORMAT_P010_10LE;
+      break;
     case V4L2_PIX_FMT_YVU410:
       format = GST_VIDEO_FORMAT_YVU9;
       break;
@@ -1697,6 +1702,7 @@ gst_v4l2_object_v4l2fourcc_to_bare_struct (guint32 fourcc)
     case V4L2_PIX_FMT_NV24:    /* 24  Y/CrCb 4:4:4  */
     case V4L2_PIX_FMT_P012:
     case V4L2_PIX_FMT_P012M:
+    case V4L2_PIX_FMT_P010:
     case V4L2_PIX_FMT_Y212:
     case V4L2_PIX_FMT_Y312:
     case V4L2_PIX_FMT_YVU410:
@@ -2027,6 +2033,9 @@ gst_v4l2_object_get_caps_info (GstV4l2Object * v4l2object, GstCaps * caps,
       case GST_VIDEO_FORMAT_P012_LE:
         fourcc = V4L2_PIX_FMT_P012;
         fourcc_nc = V4L2_PIX_FMT_P012M;
+        break;
+      case GST_VIDEO_FORMAT_P010_10LE:
+        fourcc = V4L2_PIX_FMT_P010;
         break;
       case GST_VIDEO_FORMAT_YVYU:
         fourcc = V4L2_PIX_FMT_YVYU;
