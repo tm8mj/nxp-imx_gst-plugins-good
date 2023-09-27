@@ -3488,7 +3488,7 @@ gst_v4l2_object_reset_compose_region (GstV4l2Object * obj)
   GST_V4L2_CHECK_OPEN (obj);
 
   sel.type = obj->type;
-  sel.target = V4L2_SEL_TGT_COMPOSE_DEFAULT;
+  sel.target = V4L2_SEL_TGT_COMPOSE;
 
   if (obj->ioctl (obj->video_fd, VIDIOC_G_SELECTION, &sel) < 0) {
     if (errno == ENOTTY) {
@@ -3841,6 +3841,7 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
   GstStructure *s;
   gboolean disable_interlacing = FALSE;
   gboolean disable_colorimetry = FALSE;
+  GstVideoFormat gformat;
 
   g_return_val_if_fail (!v4l2object->skip_try_fmt_probes ||
       gst_caps_is_writable (caps), FALSE);
@@ -3860,6 +3861,14 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
     goto invalid_caps;
 
   pixelformat = fmtdesc->pixelformat;
+  if (!V4L2_TYPE_IS_OUTPUT (v4l2object->type) && v4l2object->need_resize) {
+    GST_INFO_OBJECT (v4l2object->dbg_obj, "reset width and height: %dx%d",
+        v4l2object->format.fmt.pix.width, v4l2object->format.fmt.pix.height);
+    gformat = gst_v4l2_object_v4l2fourcc_to_video_format (pixelformat);
+    gst_video_info_set_format (&info, gformat, v4l2object->format.fmt.pix.width,
+        v4l2object->format.fmt.pix.height);
+  }
+
   if (V4L2_TYPE_IS_OUTPUT (v4l2object->type)
       && (pixelformat == V4L2_PIX_FMT_HEVC || pixelformat == V4L2_PIX_FMT_VP9))
     v4l2object->is_g2 = TRUE;
@@ -4565,7 +4574,7 @@ gst_v4l2_object_acquire_format (GstV4l2Object * v4l2object, GstVideoInfo * info)
   /* Use the default compose rectangle */
   memset (&sel, 0, sizeof (struct v4l2_selection));
   sel.type = v4l2object->type;
-  sel.target = V4L2_SEL_TGT_COMPOSE_DEFAULT;
+  sel.target = V4L2_SEL_TGT_COMPOSE;
   if (v4l2object->ioctl (v4l2object->video_fd, VIDIOC_G_SELECTION, &sel) >= 0) {
     r = &sel.r;
   } else {
@@ -5445,7 +5454,7 @@ gst_v4l2_object_decide_allocation (GstV4l2Object * obj, GstQuery * query)
 
   /* aovid copy Amphion tiled frame buffer for un-active video track */
   /* also to avoid copy Hantro frame buffer when link v4l2 decoder with fakesink */
-  if (obj->is_amphion || obj->is_hantro) {
+  if (obj->is_amphion || obj->is_hantro || IS_IMX95 ()) {
     can_share_own_pool = TRUE;
     if (min < GST_V4L2_MIN_BUFFERS (obj))
       min = GST_V4L2_MIN_BUFFERS (obj);

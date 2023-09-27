@@ -235,6 +235,8 @@ struct _GstV4l2Object {
   gboolean skip_try_fmt_probes;
   gboolean is_amphion;
   gboolean is_hantro;
+
+  gboolean need_resize;
 };
 
 struct _GstV4l2ObjectClassHelper {
