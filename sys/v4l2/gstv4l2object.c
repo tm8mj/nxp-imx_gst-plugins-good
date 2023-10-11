@@ -541,6 +541,7 @@ gst_v4l2_object_new (GstElement * element,
   v4l2object->norms = NULL;
   v4l2object->channels = NULL;
   v4l2object->colors = NULL;
+  v4l2object->drop_frames = NULL;
 
   v4l2object->drm_modifier = 0;
   v4l2object->is_g2 = FALSE;
@@ -602,6 +603,7 @@ gst_v4l2_object_destroy (GstV4l2Object * v4l2object)
   g_free (v4l2object->videodev);
   g_free (v4l2object->par);
   g_free (v4l2object->channel);
+  g_free (v4l2object->drop_frames);
 
   gst_poll_free (v4l2object->poll);
 
@@ -995,6 +997,11 @@ gst_v4l2_object_close (GstV4l2Object * v4l2object)
   if (v4l2object->channel) {
     g_free (v4l2object->channel);
     v4l2object->channel = NULL;
+  }
+
+  if (v4l2object->drop_frames) {
+    g_free (v4l2object->drop_frames);
+    v4l2object->drop_frames = NULL;
   }
 
   return TRUE;

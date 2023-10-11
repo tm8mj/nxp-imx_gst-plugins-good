@@ -1429,6 +1429,7 @@ gst_v4l2_allocator_dqbuf (GstV4l2Allocator * allocator,
   if (V4L2_TYPE_IS_OUTPUT (obj->type)) {
     gst_v4l2_allocator_reset_size (allocator, group);
     if (group->buffer.flags & V4L2_BUF_FLAG_ERROR) {    //output buffer cannot be decoded
+      obj->drop_frames = g_list_append (obj->drop_frames, &group->buffer.sequence);
       if (!obj->frame_decoded)
         obj->err_cnt++;
     } else {

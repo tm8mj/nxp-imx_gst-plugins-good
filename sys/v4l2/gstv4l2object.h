@@ -197,6 +197,8 @@ struct _GstV4l2Object {
   GList *channels;
   GData *controls;
 
+  GList *drop_frames;
+
   /* properties */
   v4l2_std_id tv_norm;
   gchar *channel;
