@@ -1103,7 +1103,8 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
     while (self->v4l2output->drop_frames) {
       guint32 *tmp = self->v4l2output->drop_frames->data;
       GstVideoFrame *frame = gst_video_decoder_get_frame (decoder, *tmp);
-      gst_video_decoder_drop_frame (decoder, frame);
+      if (frame)
+        gst_video_decoder_drop_frame (decoder, frame);
       self->v4l2output->drop_frames = g_list_remove (self->v4l2output->drop_frames, tmp);
     }
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
@@ -1149,7 +1150,8 @@ gst_v4l2_video_dec_handle_frame (GstVideoDecoder * decoder,
     while (self->v4l2output->drop_frames) {
       guint32 *tmp = self->v4l2output->drop_frames->data;
       GstVideoFrame *frame = gst_video_decoder_get_frame (decoder, *tmp);
-      gst_video_decoder_drop_frame (decoder, frame);
+      if (frame)
+        gst_video_decoder_drop_frame (decoder, frame);
       self->v4l2output->drop_frames = g_list_remove (self->v4l2output->drop_frames, tmp);
     }
     GST_VIDEO_DECODER_STREAM_LOCK (decoder);
