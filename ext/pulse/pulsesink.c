@@ -1603,6 +1603,10 @@ gst_pulseringbuffer_commit (GstAudioRingBuffer * buf, guint64 * sample,
               continue;
             }
 
+            /* check if we was paused when pipeline flushing */
+            if (pbuf->paused)
+              goto was_paused;
+
             if (pbuf->corked) {
               /* we uncork when the read_index is too far behind write_index */
               if (info->read_index + bufsize <= info->write_index) {
