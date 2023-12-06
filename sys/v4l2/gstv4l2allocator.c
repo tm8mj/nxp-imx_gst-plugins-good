@@ -1148,7 +1148,7 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
     mem = (GstV4l2Memory *) group->mem[0];
 
     /* Update memory */
-    mem->mem.maxsize = vmeta->offset[1];
+    mem->mem.maxsize = maxsize;
     mem->mem.offset = vmeta->offset[0];
     mem->mem.size = vmeta->offset[1];
     mem->dmafd = dmafd;
@@ -1177,7 +1177,7 @@ gst_v4l2_allocator_import_dmabuf (GstV4l2Allocator * allocator,
       mem = (GstV4l2Memory *) group->mem[1];
 
       /* Update memory */
-      mem->mem.maxsize = vmeta->offset[2];
+      mem->mem.maxsize = maxsize;
       mem->mem.offset = vmeta->offset[1];
       mem->mem.size = vmeta->offset[2];
       mem->dmafd = dmafd;
