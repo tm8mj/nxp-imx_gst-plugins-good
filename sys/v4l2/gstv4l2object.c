@@ -3861,14 +3861,6 @@ gst_v4l2_object_set_format_full (GstV4l2Object * v4l2object, GstCaps * caps,
     goto invalid_caps;
 
   pixelformat = fmtdesc->pixelformat;
-  if (!V4L2_TYPE_IS_OUTPUT (v4l2object->type) && v4l2object->need_resize) {
-    GST_INFO_OBJECT (v4l2object->dbg_obj, "reset width and height: %dx%d",
-        v4l2object->format.fmt.pix.width, v4l2object->format.fmt.pix.height);
-    gformat = gst_v4l2_object_v4l2fourcc_to_video_format (pixelformat);
-    gst_video_info_set_format (&info, gformat, v4l2object->format.fmt.pix.width,
-        v4l2object->format.fmt.pix.height);
-  }
-
   if (V4L2_TYPE_IS_OUTPUT (v4l2object->type)
       && (pixelformat == V4L2_PIX_FMT_HEVC || pixelformat == V4L2_PIX_FMT_VP9))
     v4l2object->is_g2 = TRUE;
@@ -5141,16 +5133,9 @@ gst_v4l2_object_match_buffer_layout (GstV4l2Object * obj, guint n_planes,
 
     format = obj->format;
 
-    if (padded_height) {
-      GST_DEBUG_OBJECT (obj->dbg_obj, "Padded height %u", padded_height);
-
-      obj->align.padding_bottom =
-          padded_height - GST_VIDEO_INFO_FIELD_HEIGHT (&obj->info);
-    } else {
-      GST_WARNING_OBJECT (obj->dbg_obj,
-          "Failed to compute padded height; keep the default one");
-      padded_height = format.fmt.pix_mp.height;
-    }
+    /* This is to avoid encode's padding_bottom is overwritten by decoder's
+     * padding_bottom in vmeta after downscaling */
+    padded_height = format.fmt.pix_mp.height;
 
     /* update the current format with the stride we want to import from */
     if (V4L2_TYPE_IS_MULTIPLANAR (obj->type)) {
