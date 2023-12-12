@@ -939,6 +939,10 @@ gst_v4l2_set_defaults (GstV4l2Object * v4l2object)
 static void
 gst_v4l2_object_init_poll (GstV4l2Object * v4l2object)
 {
+  if (v4l2object->poll)
+    gst_poll_free (v4l2object->poll);
+  v4l2object->poll = gst_poll_new (TRUE);
+
   gst_poll_fd_init (&v4l2object->pollfd);
   v4l2object->pollfd.fd = v4l2object->video_fd;
   gst_poll_add_fd (v4l2object->poll, &v4l2object->pollfd);
