@@ -978,6 +978,14 @@ gst_v4l2_video_dec_loop (GstVideoDecoder * decoder)
       ret = gst_v4l2_buffer_pool_process (cpool, &buffer, NULL);
       if (cpool)
         gst_object_unref (cpool);
+
+      while (self->v4l2capture->drop_frames) {
+        guint32 *tmp = self->v4l2capture->drop_frames->data;
+        GstVideoCodecFrame *frame = gst_video_decoder_get_frame (decoder, *tmp);
+        if (frame)
+          gst_video_decoder_drop_frame (decoder, frame);
+        self->v4l2capture->drop_frames = g_list_remove (self->v4l2capture->drop_frames, tmp);
+      }
     }
   } while (ret == GST_V4L2_FLOW_CORRUPTED_BUFFER);
 

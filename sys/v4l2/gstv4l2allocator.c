@@ -1437,6 +1437,10 @@ gst_v4l2_allocator_dqbuf (GstV4l2Allocator * allocator,
       obj->frame_decoded = TRUE;
     }
   } else {
+    if (group->buffer.flags & V4L2_BUF_FLAG_ERROR) {    //capture buffer has error flag
+       GST_INFO_OBJECT (allocator, "CAPTURE error flag for frame %u", (guint32) group->buffer.timestamp.tv_sec);
+       obj->drop_frames = g_list_append (obj->drop_frames, &group->buffer.timestamp);
+    }
     /* for capture, simply read the size */
     for (i = 0; i < group->n_mem; i++) {
       gsize size, offset;
